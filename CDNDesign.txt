@@ -25,5 +25,5 @@ We have not decided how to manage the authentication, but it will cut in and pro
 Request / Data center program
 Because these are not integral components of our design, we will be implementing these only as much as needed to flush the other parts of our design.
 
-Cache Policy
+CDN Node Cache Policy
   -(not yet decided)
