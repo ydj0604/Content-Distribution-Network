@@ -1,0 +1,26 @@
+Origin server:
+- incoming requests are made to the origin server
+- origin server will decide which CDN Node to send the request to by considering
+  a. which node (if any) has the file in cache already (consults the meta server)
+  b. geographic location
+  c. node load (to balance)
+- this will be done like a server to make implementing the logic easier for us (versus dns manipulation)
+- can be scaled by replicating (cheaply) if under heavy load (our implementation will only have one)
+ 
+Meta server:
+- contains a table of which file hashes each cdn node already has in cache
+- can be scaled by replicating (cheaply) if under heavy load (our implementation will only have one)
+- can be combined with the origin server for a smaller implementation
+ 
+CDN Node servers:
+- as a forwarded request comes from the origin either
+  - responds if file in cache
+  or
+  - requests file from data center, also prefetching any other related files
+  - because this changes its cache contents, the node must update the meta server
+ 
+Authentication
+We have not decided how to manage the authentication, but it will cut in and protect the access between the origin and cdn node
+ 
+Request / Data center program
+Because these are not integral components of our design, we will be implementing these only as much as needed to flush the other parts of our design.
