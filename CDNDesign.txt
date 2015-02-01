@@ -18,9 +18,7 @@ CDN Node servers:
   or
   - requests file from data center, also prefetching any other related files
 - because this changes its cache contents, the node must update the meta server
-
-CDN Node Cache Policy
-  -(not yet decided)
+- cache policy: (not yet decided)
  
 Authentication
 We have not decided how to manage the authentication, but it will cut in and protect the access between the origin and cdn node
