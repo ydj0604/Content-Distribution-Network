@@ -8,6 +8,5 @@ Main Components: Origin server, Meta server, CDN node server, Authentication ser
 Technologies to be used:
 
 1. casablanca (C++): https://casablanca.codeplex.com/
-2. Jersey + JAX-RS (Java): https://jersey.java.net/
 
-*Jersey will be so much easier to use, but TA preferred C++, so...let's see
+Google Doc: https://docs.google.com/document/d/1vdE9084hsvU3WLp8chF8b2vXLoSgocfiD8iQCq24T-w/edit
