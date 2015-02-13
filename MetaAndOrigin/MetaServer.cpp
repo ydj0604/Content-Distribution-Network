@@ -1,6 +1,11 @@
 #include "MetaServer.h"
 #include <algorithm>
 
+// comparator function that sorts the file list in ascending alphabetical order
+bool compare( pair<string, string>& a, pair<string, string>& b) {
+		return a.first < b.first;
+}
+
 MetaServer::MetaServer() {
 		// Initialize MetaServer receiver/sender objects
 }
@@ -63,7 +68,7 @@ vector< pair<string, string> > MetaServer::runSelectionAlgorithm( const vector< 
 		*/
 }
 
-	// sorter for file list vector
+// sorter for file list vector
 void MetaServer::sortFileList( vector< pair<string, string> >& fileListFromOrigin ) {
 		// sort the vector of <filename, filehash> in alphabetical order
 		sort(fileListFromOrigin.begin(), fileListFromOrigin.end(), compare);
@@ -83,9 +88,6 @@ bool MetaServer::CDN_load_OK( const string CDN_addr ) {
 		// false = too much load on that CDN; consider other
 }
 
-/*
-// comparator function that sorts the file list in ascending alphabetical order
-bool MetaServer::compare( pair<string, string>& a, pair<string, string>& b) {
-		return a.first < b.first;
-}
-*/
+
+
+
