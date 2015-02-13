@@ -4,8 +4,9 @@
 #include <string>
 #include <vector>
 #include <fstream>
+
+#include "../MetaAndOrigin/OriginServerSender.h"
 #include "OriginServerReceiver.h"
-#include "OriginServerSender.h"
 #include "FSSReceiver.h"
 #include "FSSSender.h"
 

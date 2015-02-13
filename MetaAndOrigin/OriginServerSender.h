@@ -1,7 +1,7 @@
 #ifndef ORIGIN_SERVER_SENDER_H
 #define ORIGIN_SERVER_SENDER_H
 
-#include "OriginServer.h"
+#include "../MetaAndOrigin/OriginServer.h"
 
 using namespace std;
 

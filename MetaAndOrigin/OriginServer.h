@@ -2,8 +2,9 @@
 #define ORIGIN_SERVER_H
 
 #include <vector>
-#include "OriginServerListener.h"
-#include "OriginServerSender.h"
+
+#include "../MetaAndOrigin/OriginServerListener.h"
+#include "../MetaAndOrigin/OriginServerSender.h"
 
 using namespace std;
 
@@ -66,7 +67,7 @@ public:
 
 
 private:
-
+	MetaSer
 	OriginServerListener* m_listener; //http library wrapper object for receiving requests
 	OriginServerSender* m_sender; //http library wrapper object for sending requests
 };
