@@ -1,13 +1,27 @@
+#ifdef _WIN32
+	#include <unordered_map>
+	#include <unordered_set>
+#else
+	#include <tr1/unordered_map>
+	#include <tr1/unordered_set>
+#endif
+
 #include "MetaServer.h"
+#include "../Origin/OriginServer.h"
+#include <string>
+#include <vector>
+#include <math.h>
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 
-// comparator function that sorts the file list in ascending alphabetical order
-bool compare( pair<string, string>& a, pair<string, string>& b) {
-		return a.first < b.first;
-}
+using namespace std;
+using namespace std::tr1;
 
-MetaServer::MetaServer() {
-		// Initialize MetaServer receiver/sender objects
+MetaServer::MetaServer(string file, OriginServer* origin) {
+	m_file = file;
+	m_origin = origin;
+	// Initialize MetaServer receiver/sender objects
 }
 
 MetaServer::~MetaServer() {
@@ -33,61 +47,215 @@ void MetaServer::initiateMetaServer() {
 }
 
 void MetaServer::endMetaServer() {
-		// terminates the Meta Server's connection with others
+	// terminates the Meta Server's connection with others
 }
 
-	// receive request from FSS and save its information to Meta Server's database: file
-	// TODO: do we want to get one file per connection or several files per connection?
-void MetaServer::fileList_parser( string json ) {
-		/*
-			File list will be retrieved in json from HTTP
-			Use this json information to extract (filename, filehash, CDNs)
-			  and save it to some kind of file (database) on the Meta Server's machine
-		   ...
-		   ..
-		   .
-		*/
+void MetaServer::setFssIpAddr(string fss) {
+	m_FssIpAddr = fss;
+}
+void MetaServer::addCdnIpAddr(string cdn) {
+	m_setOfCdnIpAddr.insert(cdn);
+}
+void MetaServer::addLatLngWithIpAddr(string ipAddr, double lat, double lng) { //overwrites the existing map entry
+	m_ipAddrToLatLngMap[ipAddr] = make_pair(lat, lng);
 }
 
-	/*
-		The selection algorithm will be based on the file list input
-		Using this file list received from the Origin Server, Meta Server will determine which CDN will serve each particular file
-		When all the CDNs whose cache has the file are further away from FSS, our selection algorithm will choose the geographically closest CDN
-	*/
-	// return pair is <file_name, CDN address>
-	// type: 0 = download, 1 = upload
 
-vector< pair<string, string> > MetaServer::runSelectionAlgorithm( const vector< pair<string, string> >& fileListFromOrigin, int type ) {
-		/*
-			For each file in fileListFromOrigin
-				1. Check if any CDN has that file and if its hash is the same, or not
-					a. If so, check every CDN's distance from the Client and choose the closest CDN
-					  - If all CDNs that have the file are more distant than FSS, get the closest CDN
-					b. If none of CDNs have that file get the closest CDN
-				2. Check the load of that CDN (tentative)
-		*/
+/*------------------*/
+/* helper functions */
+/*------------------*/
+
+bool compare(const pair<string, string>& a, const pair<string, string>& b) {
+		return a.first < b.first;
 }
 
-// sorter for file list vector
-void MetaServer::sortFileList( vector< pair<string, string> >& fileListFromOrigin ) {
-		// sort the vector of <filename, filehash> in alphabetical order
+void MetaServer::sortFileList(vector< pair<string, string> >& fileListFromOrigin) {
 		sort(fileListFromOrigin.begin(), fileListFromOrigin.end(), compare);
 }
 
-string MetaServer::getClosestCDN( const vector<string> cdn_list ) {
-		// helper function for selectionAlgorithm that will determine which of the CDNs is the closest to the client
+double rad2deg(double rad) {
+	return (rad * 180 / 3.14159265358979323846);
 }
 
-bool MetaServer::isCDN_closer( const string CDN_addr ) {
-		// true = given CDN is closer to the client than the FSS
-		// false = otherwise
+double deg2rad(double deg) {
+	return (deg * 3.14159265358979323846 / 180);
+}
+
+pair<double, double> MetaServer::getLatLng(string ipAddr) {
+	if(m_ipAddrToLatLngMap.count(ipAddr)==0)
+		return make_pair(0.0, 0.0); //ipAddr doesn't exist in our map
+	return m_ipAddrToLatLngMap[ipAddr];
+}
+
+double MetaServer::calculateDistance(string ipAddr1, string ipAddr2) { //in kilometers
+	pair<double, double> loc1 = getLatLng(ipAddr1), loc2 = getLatLng(ipAddr2);
+	double theta, dist;
+	theta = loc1.second - loc2.second;
+	dist = sin(deg2rad(loc1.first)) * sin(deg2rad(loc2.first)) + cos(deg2rad(loc1.first)) * cos(deg2rad(loc2.first)) * cos(deg2rad(theta));
+	dist = acos(dist);
+	dist = rad2deg(dist);
+	dist = dist * 60 * 1.1515 * 1.609344;
+	return dist;
+}
+
+
+/*-------------------------------*/
+/* for communication with Origin */
+/*-------------------------------*/
+
+vector<string> MetaServer::getCdnsThatContainFile(string fileName) {
+	//read from m_file and retrieves the list of CDN addresses
+	vector<string> result;
+	return result;
+}
+
+string MetaServer::getClosestCDN(const vector<string>& cdnAddrList, string clientIpAddr) { //also checks load inside
+	if(cdnAddrList.size()==0)
+		return "";
+
+	double minDist = -1;
+	int minIdx = -1;
+
+	for(int i=0; i<cdnAddrList.size(); i++) {
+		if(!CDN_load_OK(cdnAddrList[i]))
+			continue;
+		double currDist = calculateDistance(cdnAddrList[i], clientIpAddr);
+		if(minDist < 0 || currDist<minDist) {
+			minDist = currDist;
+			minIdx = i;
+		}
+	}
+
+	if(minIdx==-1) //all the CDNs are heavily loaded
+		return "";
+
+	return cdnAddrList[minIdx];
 }
 
 bool MetaServer::CDN_load_OK( const string CDN_addr ) {
-		// true = CDN is available to serve
-		// false = too much load on that CDN; consider other
+	return true; //always true for now
+}
+
+bool MetaServer::isCDN_closerThanFSS(string cdnIpAddr, string clientIpAddr) {
+	double distToCDN = calculateDistance(cdnIpAddr, clientIpAddr);
+	double distToFSS = calculateDistance(m_FssIpAddr, clientIpAddr);
+	return distToCDN <= distToFSS;
 }
 
 
+void parseLine(const string& line, string& fileName, string& fileHash, vector<string>& cdnList) {
+	string currWord = "";
+	int wordCount = 0;
+	for(int i=0; i<line.size(); i++) {
+		if(line[i] != ' ') {
+			currWord += line[i];
+		} else {
+			if(wordCount==0)
+				fileName = currWord;
+			else if(wordCount==1)
+				fileHash = currWord;
+			else
+				cdnList.push_back(currWord);
+			wordCount++;
+			currWord = "";
+		}
+	}
+	if(wordCount==1) //when the cdnList is empty
+		fileHash = currWord;
+	else if(wordCount>1)
+		cdnList.push_back(currWord);
+}
 
+vector<pair<string, string>> MetaServer::processListFromOriginDownload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr) {
+	vector<pair<string, string>> result;
+	ifstream file;
+	file.open(m_file.c_str());
+	if(!file.is_open())
+		return result; //file not open => return an empty vector
+
+	unordered_map<string, string> clientNameToHashMap;
+	for(int i=0; i<listFromClientApp.size(); i++) {
+		clientNameToHashMap[listFromClientApp[i].first] = listFromClientApp[i].second;
+	}
+
+	string currLine;
+	while(getline(file, currLine)) {
+		string fileName="", fileHash="";
+		vector<string> cdnsThatContainFile;
+		parseLine(currLine, fileName, fileHash, cdnsThatContainFile);
+		if(clientNameToHashMap.count(fileName)>0 && clientNameToHashMap[fileName]==fileHash) //no need to download since name and hash match
+			continue;
+		string candidateCdnAddr = getClosestCDN(cdnsThatContainFile, clientIpAddr);
+		if(isCDN_closerThanFSS(candidateCdnAddr, clientIpAddr)) { //cdn is closer than fss
+			result.push_back(make_pair(fileName, candidateCdnAddr));
+		} else {
+			vector<string> allCDNs(m_setOfCdnIpAddr.begin(), m_setOfCdnIpAddr.end());
+			string closestCDN = getClosestCDN(allCDNs, clientIpAddr);
+			result.push_back(make_pair(fileName, closestCDN));
+		}
+	}
+
+	return result;
+}
+
+vector<pair<string, string>> MetaServer::processListFromOriginUpload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr) {
+	vector<pair<string, string>> result;
+	ifstream file;
+	file.open(m_file.c_str());
+	if(!file.is_open())
+		return result; //file not open => return an empty vector
+
+	unordered_map<string, string> clientNameToHashMap;
+	for(int i=0; i<listFromClientApp.size(); i++) {
+		clientNameToHashMap[listFromClientApp[i].first] = listFromClientApp[i].second;
+	}
+
+	vector<string> allCDNs(m_setOfCdnIpAddr.begin(), m_setOfCdnIpAddr.end());
+	string closestCdnAddr = getClosestCDN(allCDNs, clientIpAddr);
+
+	//add the files that exist in both FSS and client local and need to be updated
+	string currLine;
+	while(getline(file, currLine)) {
+		string fileName="", fileHash="";
+		vector<string> cdnsThatContainFile;
+		parseLine(currLine, fileName, fileHash, cdnsThatContainFile);
+		if(clientNameToHashMap.count(fileName)==0) {
+			continue;
+		} else if(clientNameToHashMap[fileName]==fileHash) { //no need to download since name and hash match
+			clientNameToHashMap.erase(fileName);
+			continue;
+		}
+		result.push_back(make_pair(fileName, closestCdnAddr));
+		clientNameToHashMap.erase(fileName); //erase to find out which client's files are new to FSS
+	}
+
+	//add the files that client has but FSS doesn't
+	unordered_map<string, string>::iterator itr = clientNameToHashMap.begin();
+	while(itr != clientNameToHashMap.end()) {
+		result.push_back(make_pair(itr->first, closestCdnAddr));
+		itr++;
+	}
+
+	return result;
+}
+
+
+/*----------------------------*/
+/* for communication with CDN */
+/*----------------------------*/
+void MetaServer::deleteMetaEntry(string fileName) {
+
+}
+
+void MetaServer::addNewMetaEntry(string fileName, const string& fileHash, const vector<string>& CdnAddrList) {
+
+}
+
+void MetaServer::updateMetaEntryHash(string fileName, const string& fileHash) {
+
+}
+
+void MetaServer::addCdnToMetaEntry(string fileName, string CdnAddrList) {
+
+}
 
