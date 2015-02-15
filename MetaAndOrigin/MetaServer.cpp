@@ -42,6 +42,15 @@ void MetaServer::fileList_parser( string json ) {
 		   ..
 		   .
 		*/
+
+		// extract filename, filehash from json object
+		string file_name = json_to_fileName(json);
+		string file_hash = json_to_hashName(json);
+		
+		ofstream out("a.txt");
+		out << file_name + " ";
+		
+		out << file_hash + " ";
 }
 
 	/*
@@ -83,9 +92,8 @@ bool MetaServer::CDN_load_OK( const string CDN_addr ) {
 		// false = too much load on that CDN; consider other
 }
 
-/*
+
 // comparator function that sorts the file list in ascending alphabetical order
-bool MetaServer::compare( pair<string, string>& a, pair<string, string>& b) {
+bool compare( pair<string, string>& a, pair<string, string>& b) {
 		return a.first < b.first;
 }
-*/

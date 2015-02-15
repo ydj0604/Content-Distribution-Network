@@ -23,9 +23,9 @@ public:
 	bool CDN_load_OK( const string CDN_addr );
 
 private:
-	OriginServer* m_origin;
-	CDNReceiver* m_CDN_rcvr;					// receives HTTP request from CDN
-	CDNSender* m_CDN_sender;					// sends HTTP request to CDN
+	OriginServer* m_origin;		// OriginServer to communicate with
+	CDNReceiver* m_CDN_rcvr;	// receives HTTP request from CDN
+	CDNSender* m_CDN_sender;	// sends HTTP request to CDN
 };
 
 #endif
