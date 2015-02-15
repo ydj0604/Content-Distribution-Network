@@ -4,6 +4,18 @@
 #include "hash.h"
 using namespace std;
 
+FileInfo newFileInfo(string name, string hash, string cdnAddr) {
+  FileInfo f = FileInfo();
+  f.name = name;
+  f.hash = hash;
+  f.cdnAddr = cdnAddr;
+  return f;
+}
+
+void printFileInfo(FileInfo f) {
+  printf("%s %s %s\n", f.name.c_str(), f.hash.c_str(), f.cdnAddr.c_str());
+}
+
 Client::Client() {
   syncDownload();
 }
@@ -12,7 +24,7 @@ Client::~Client() {
 void Client::syncDownload() {
   vector<FileInfo> files = getListOfFilesFromDirectory();
   for (size_t i = 0; i < files.size(); i++)
-    cout << files[i].name << " " << files[i].hash << endl;
+    printFileInfo(files[i]);
 
   /*
    getListOfFilesFromDirectory()
@@ -62,9 +74,7 @@ vector<FileInfo> Client::getListOfFilesFromDirectory() {
       continue;
 
     // Convert to string object and add to return vector
-    FileInfo f = FileInfo();
-    f.name = ent->d_name;
-    f.hash = hashFile(f.name);
+    FileInfo f = newFileInfo(ent->d_name, hashFile(ent->d_name));
     files.push_back(f);
   }
 

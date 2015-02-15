@@ -9,7 +9,10 @@ struct FileInfo
 {
   string name;
   string hash;
+  string cdnAddr;
 };
+FileInfo newFileInfo(string name, string hash, string cdnAddr = "0.0.0.0");
+void printFileInfo(FileInfo f);
 
 class Client {
 public:
