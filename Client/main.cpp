@@ -7,6 +7,5 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
   Client c;
-  cout << hashFile("main.cpp") << endl; 
   return 0;
 }

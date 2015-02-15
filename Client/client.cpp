@@ -1,6 +1,7 @@
 #include "client.h"
 #include <iostream>
 #include "dirent.h" // for file reading
+#include "hash.h"
 using namespace std;
 
 Client::Client() {
@@ -9,9 +10,9 @@ Client::Client() {
 Client::~Client() {
 }
 void Client::syncDownload() {
-  vector<string> fileNames = getListOfFilesFromDirectory();
-  for (size_t i = 0; i < fileNames.size(); i++)
-    cout << fileNames[i] << endl;
+  vector<FileInfo> files = getListOfFilesFromDirectory();
+  for (size_t i = 0; i < files.size(); i++)
+    cout << files[i].name << " " << files[i].hash << endl;
 
   /*
    getListOfFilesFromDirectory()
@@ -23,10 +24,11 @@ void Client::syncDownload() {
 }
 
 void Client::syncUpload() {
+  /*
   vector<string> fileNames = getListOfFilesFromDirectory();
   for (size_t i = 0; i < fileNames.size(); i++)
     cout << fileNames[i] << endl;
-
+  */
   /*
    getListOfFilesFromDirectory()
    compareListOfFiles()
@@ -39,16 +41,18 @@ void Client::syncUpload() {
 vector<string> Client::compareListOfFiles() {
   // Upload list of file / hashes
   // return list of fileNames that need to be dl'd / uploaded
+  vector<string> files;
+  return files;
 }
 
-vector<string> Client::getListOfFilesFromDirectory() {
+vector<FileInfo> Client::getListOfFilesFromDirectory() {
   cout << "Getting list of files from ./" << endl;
-  vector<string> fileNames;
+  vector<FileInfo> files;
 
   DIR *dir = opendir(".");
   if (dir == NULL) {
     cout << "Could not open directory ./" << endl;
-    return fileNames;
+    return files;
   }
 
   struct dirent *ent;
@@ -58,15 +62,13 @@ vector<string> Client::getListOfFilesFromDirectory() {
       continue;
 
     // Convert to string object and add to return vector
-    string fName = ent->d_name;
-    fileNames.push_back(fName);
+    FileInfo f = FileInfo();
+    f.name = ent->d_name;
+    f.hash = hashFile(f.name);
+    files.push_back(f);
   }
 
-  return fileNames;
-}
-
-void Client::getFileHash() {
-
+  return files;
 }
 
 void downloadFile(string fileName) {
