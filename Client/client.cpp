@@ -17,11 +17,11 @@ void printFileInfo(FileInfo f) {
 }
 
 Client::Client() {
-  syncDownload();
-  syncUpload();
 }
+
 Client::~Client() {
 }
+
 void Client::syncDownload() {
   // Get list of files in directory
   vector<FileInfo> files = getListOfFilesFromDirectory();
