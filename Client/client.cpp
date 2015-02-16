@@ -18,42 +18,47 @@ void printFileInfo(FileInfo f) {
 
 Client::Client() {
   syncDownload();
+  syncUpload();
 }
 Client::~Client() {
 }
 void Client::syncDownload() {
+  // Get list of files in directory
   vector<FileInfo> files = getListOfFilesFromDirectory();
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
 
-  /*
-   getListOfFilesFromDirectory()
-   compareListOfFiles()
-   diff = list of files needed to dl
-   foreach file
-      downloadFile()
-   */
+  // Compare with origin server
+  vector<FileInfo> diffFiles = compareListOfFiles(files);
+
+  // For each file that needs to be updated, download
+  for(size_t i = 0; i < diffFiles.size();i ++)
+    downloadFile(diffFiles[i]);
 }
 
 void Client::syncUpload() {
-  /*
-  vector<string> fileNames = getListOfFilesFromDirectory();
-  for (size_t i = 0; i < fileNames.size(); i++)
-    cout << fileNames[i] << endl;
-  */
-  /*
-   getListOfFilesFromDirectory()
-   compareListOfFiles()
-   diff = list of files needed to upload
-   foreach file
-      uploadFile()
-   */
+  // Get list of files in directory
+  vector<FileInfo> files = getListOfFilesFromDirectory();
+  for (size_t i = 0; i < files.size(); i++)
+    printFileInfo(files[i]);
+
+  // Compare with origin server
+  vector<FileInfo> diffFiles = compareListOfFiles(files);
+
+  // For each file that needs to be updated, upload
+  for(size_t i = 0; i < diffFiles.size();i ++)
+    uploadFile(diffFiles[i]);
 }
 
-vector<string> Client::compareListOfFiles() {
+vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files) {
   // Upload list of file / hashes
   // return list of fileNames that need to be dl'd / uploaded
-  vector<string> files;
+  vector<string> diff;
+
+  // upload files
+  // diff = what server returns as files needed to download
+
+  // return diff;
   return files;
 }
 
@@ -81,11 +86,15 @@ vector<FileInfo> Client::getListOfFilesFromDirectory() {
   return files;
 }
 
-void downloadFile(string fileName) {
-  // request file from origin
-  // wait for response from CDN node
+void Client::downloadFile(FileInfo f) {
+  // directly download file from cdn
+  printf("Downloading file... ");
+  printFileInfo(f);
+  // request file f communication
 }
 
-void uploadFile(string fileName) {
+void Client::uploadFile(FileInfo f) {
+  printf("Uploading file... ");
+  printFileInfo(f);
   // upload file to cdn node
 }

@@ -21,10 +21,10 @@ public:
   void syncDownload();
   void syncUpload();
 private:
-  vector<string> compareListOfFiles();
+  vector<FileInfo> compareListOfFiles(vector<FileInfo>& files);
   vector<FileInfo> getListOfFilesFromDirectory();
-  void downloadFile(string fileName);
-  void uploadFile(string fileName);
+  void downloadFile(FileInfo f);
+  void uploadFile(FileInfo f);
 };
 
 #endif
