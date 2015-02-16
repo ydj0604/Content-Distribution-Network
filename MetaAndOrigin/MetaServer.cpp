@@ -43,14 +43,6 @@ void MetaServer::fileList_parser( string json ) {
 		   .
 		*/
 
-		// extract filename, filehash from json object
-		string file_name = json_to_fileName(json);
-		string file_hash = json_to_hashName(json);
-		
-		ofstream out("a.txt");
-		out << file_name + " ";
-		
-		out << file_hash + " ";
 }
 
 	/*
