@@ -37,6 +37,7 @@ public:
 	bool save_file_to_FSS (string filename, int filehash);
 
     long long get_size_of_storage();
+    char* path_maker(const char* name);
     
 	void managing_files();
 	void lock_the_storage();

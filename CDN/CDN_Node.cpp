@@ -64,12 +64,6 @@ bool CDN_Node::look_up_and_update_storage(string filename, int signal) {
         
             //convert string to char
             const char* cstr = filename.c_str();
-       
-            //make the name for removing
-            char remove_file[256];
-            strcpy(remove_file, wd);
-            strcat(remove_file,"/");
-            strcat(remove_file, cstr);
         
 			if((dir = opendir(wd)) != NULL) {
                 cout << " serious" << endl;
@@ -78,7 +72,7 @@ bool CDN_Node::look_up_and_update_storage(string filename, int signal) {
 						return true;
                     } else if (strcmp(ent->d_name,cstr)==0 && signal == 1) {
                         //remove the file
-                        if(remove(remove_file) == 0) {
+                        if(remove(path_maker(cstr)) == 0) {
                             cout << "deletion successful" << endl;
                         }
                     }
@@ -157,14 +151,7 @@ long long CDN_Node::get_size_of_storage() {
         while ((ent = readdir(dir)) != NULL) {
             cout << ent->d_name << endl;
             
-            
-            //make the name for calculating the size
-            char size_file[256];
-            strcpy(size_file, wd);
-            strcat(size_file,"/");
-            strcat(size_file, ent->d_name);
-            
-            stat(size_file, &sb);
+            stat(path_maker(ent->d_name), &sb);
             cout << "size of file: " << sb.st_size << endl;
             size_of_storage += (long long)sb.st_size;
         }
@@ -176,6 +163,15 @@ long long CDN_Node::get_size_of_storage() {
     }
         return size_of_storage;
 }
+
+char* CDN_Node::path_maker(const char* name){
+    char path_file[256];
+    strcpy(path_file, wd);
+    strcat(path_file, "/");
+    return strcat(path_file, name);
+
+}
+
 
 
 /*
