@@ -1,18 +1,24 @@
 #include "OriginServer.h"
+#include "OriginClientReceiver.h"
+#include "OriginClientSender.h"
 #include "../Meta/MetaServer.h"
 #include <iostream>
 using namespace std;
 
 OriginServer::OriginServer(MetaServer* meta) {
-	//set meta server
-	//initialize listener and sender objects
-	//initialize other necessary private variables
+	m_meta = meta;
+	m_client_rcvr = new OriginClientReceiver();
+	m_client_sender = new OriginClientSender();
 }
 
 OriginServer::~OriginServer() { //clean up
-
+	delete m_client_rcvr;
+	delete m_client_sender;
 }
 
+void OriginServer::setMeta(MetaServer* meta) {
+	m_meta = meta;
+}
 
 void OriginServer::startListeningForClientApp() {
 	/*
@@ -32,17 +38,18 @@ void OriginServer::endListeningForClientApp() {
 }
 
 //returns a vector of (file name, CDN address)
-vector<pair<string, string>> OriginServer::getListOfFilesDownload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr) {
-	vector<pair<string, string>> result = m_meta->processListFromOriginDownload(listFromClientApp, clientIpAddr);
+vector< pair<string, string> > OriginServer::getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr) {
+	vector< pair<string, string> > result = m_meta->processListFromOriginDownload(listFromClientApp, clientIpAddr);
 	return result;
 }
 
-vector<pair<string, string>> OriginServer::getListOfFilesUpload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr) {
-	vector<pair<string, string>> result = m_meta->processListFromOriginUpload(listFromClientApp, clientIpAddr);
+vector< pair<string, string> > OriginServer::getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr) {
+	vector< pair<string, string> > result = m_meta->processListFromOriginUpload(listFromClientApp, clientIpAddr);
 	return result;
 }
 
 void fileList_parser (string json) {
+	/*
 	// extract filename, filehash from json object
 	string file_name = json_to_fileName(json);
 	string file_hash = json_to_hashName(json);
@@ -51,4 +58,5 @@ void fileList_parser (string json) {
 	out << file_name + " ";
 	
 	out << file_hash + " ";
+	*/
 }

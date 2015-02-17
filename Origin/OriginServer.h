@@ -2,6 +2,7 @@
 #define ORIGIN_SERVER_H
 
 #include <vector>
+#include <string>
 
 class MetaServer;
 class OriginClientReceiver;
@@ -11,12 +12,13 @@ using namespace std;
 
 class OriginServer {
 public:
-	OriginServer(MetaServer* meta);
+	OriginServer(MetaServer* meta=NULL);
 	~OriginServer();
+	void setMeta(MetaServer* meta);
 	void startListeningForClientApp();
 	void endListeningForClientApp();
-	vector<pair<string, string>> getListOfFilesDownload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr);
-	vector<pair<string, string>> getListOfFilesUpload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr);
+	vector< pair<string, string> > getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr);
+	vector< pair<string, string> > getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr);
 
 private:
 	MetaServer* m_meta;

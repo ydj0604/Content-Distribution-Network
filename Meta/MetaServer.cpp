@@ -7,25 +7,40 @@
 #endif
 
 #include "MetaServer.h"
+#include "MetaCDNReceiver.h"
+#include "MetaCDNSender.h"
 #include "../Origin/OriginServer.h"
 #include <string>
 #include <vector>
 #include <math.h>
+#include <sys/stat.h>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <ios>
 
 using namespace std;
 using namespace std::tr1;
 
 MetaServer::MetaServer(string file, OriginServer* origin) {
-	m_file = file;
+	for(int i=0; i<file.size(); i++)
+		if(file[i]==' ') {
+			cout<<"MetaServer::MetaServer - file name can't contain a space"<<endl;
+			exit(0);
+		}
+	string dirName = "./MetaData";
+	mkdir(dirName.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	m_file = "./MetaData/"+file;
+	m_version = 0;
+
 	m_origin = origin;
-	// Initialize MetaServer receiver/sender objects
+	m_CDN_rcvr = new MetaCDNReceiver();
+	m_CDN_sender = new MetaCDNSender();
 }
 
 MetaServer::~MetaServer() {
-		// destructor for MetaServer class object
+	delete m_CDN_rcvr;
+	delete m_CDN_sender;
 }
 
 void MetaServer::initiateMetaServer() {
@@ -82,19 +97,21 @@ double deg2rad(double deg) {
 }
 
 pair<double, double> MetaServer::getLatLng(string ipAddr) {
-	if(m_ipAddrToLatLngMap.count(ipAddr)==0)
-		return make_pair(0.0, 0.0); //ipAddr doesn't exist in our map
+	if(m_ipAddrToLatLngMap.count(ipAddr)==0) {
+		cout<<"MetaServer::getLatLng - ip address does not exist"<<endl;
+		exit(0);
+	}
 	return m_ipAddrToLatLngMap[ipAddr];
 }
 
-double MetaServer::calculateDistance(string ipAddr1, string ipAddr2) { //in kilometers
+double MetaServer::calculateDistance(string ipAddr1, string ipAddr2) { //in miles
 	pair<double, double> loc1 = getLatLng(ipAddr1), loc2 = getLatLng(ipAddr2);
 	double theta, dist;
 	theta = loc1.second - loc2.second;
 	dist = sin(deg2rad(loc1.first)) * sin(deg2rad(loc2.first)) + cos(deg2rad(loc1.first)) * cos(deg2rad(loc2.first)) * cos(deg2rad(theta));
 	dist = acos(dist);
 	dist = rad2deg(dist);
-	dist = dist * 60 * 1.1515 * 1.609344;
+	dist = dist * 60 * 1.1515;
 	return dist;
 }
 
@@ -102,46 +119,6 @@ double MetaServer::calculateDistance(string ipAddr1, string ipAddr2) { //in kilo
 /*-------------------------------*/
 /* for communication with Origin */
 /*-------------------------------*/
-
-vector<string> MetaServer::getCdnsThatContainFile(string fileName) {
-	//read from m_file and retrieves the list of CDN addresses
-	vector<string> result;
-	return result;
-}
-
-string MetaServer::getClosestCDN(const vector<string>& cdnAddrList, string clientIpAddr) { //also checks load inside
-	if(cdnAddrList.size()==0)
-		return "";
-
-	double minDist = -1;
-	int minIdx = -1;
-
-	for(int i=0; i<cdnAddrList.size(); i++) {
-		if(!CDN_load_OK(cdnAddrList[i]))
-			continue;
-		double currDist = calculateDistance(cdnAddrList[i], clientIpAddr);
-		if(minDist < 0 || currDist<minDist) {
-			minDist = currDist;
-			minIdx = i;
-		}
-	}
-
-	if(minIdx==-1) //all the CDNs are heavily loaded
-		return "";
-
-	return cdnAddrList[minIdx];
-}
-
-bool MetaServer::CDN_load_OK( const string CDN_addr ) {
-	return true; //always true for now
-}
-
-bool MetaServer::isCDN_closerThanFSS(string cdnIpAddr, string clientIpAddr) {
-	double distToCDN = calculateDistance(cdnIpAddr, clientIpAddr);
-	double distToFSS = calculateDistance(m_FssIpAddr, clientIpAddr);
-	return distToCDN <= distToFSS;
-}
-
 
 void parseLine(const string& line, string& fileName, string& fileHash, vector<string>& cdnList) {
 	string currWord = "";
@@ -166,13 +143,67 @@ void parseLine(const string& line, string& fileName, string& fileHash, vector<st
 		cdnList.push_back(currWord);
 }
 
-vector<pair<string, string>> MetaServer::processListFromOriginDownload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr) {
-	vector<pair<string, string>> result;
+vector<string> MetaServer::getCdnsThatContainFile(string fileName) {
 	ifstream file;
-	file.open(m_file.c_str());
-	if(!file.is_open())
-		return result; //file not open => return an empty vector
+	string currFileName = m_file+"_v" + char('0'+m_version);
+	file.open(currFileName.c_str());
+	if(!file.is_open()) {
+		cout<<"MetaServer::getCdnsThatContainFile - file not opened"<<endl;
+		exit(0);
+	}
 
+	string currLine;
+	while(getline(file, currLine)) {
+		if(currLine.substr(0, fileName.size())==fileName && currLine[fileName.size()]==' ') {
+			string fileName="", fileHash="";
+			vector<string> cdnsThatContainFile;
+			parseLine(currLine, fileName, fileHash, cdnsThatContainFile);
+			return cdnsThatContainFile;
+		}
+	}
+	vector<string> emptyVec;
+	return emptyVec;
+}
+
+string MetaServer::getClosestCDN(const vector<string>& cdnAddrList, string clientIpAddr) { //also checks load inside
+	double minDist = -1;
+	int minIdx = -1;
+
+	for(int i=0; i<cdnAddrList.size(); i++) {
+		if(!CDN_load_OK(cdnAddrList[i]))
+			continue;
+		double currDist = calculateDistance(cdnAddrList[i], clientIpAddr);
+		if(minDist < 0 || currDist<minDist) {
+			minDist = currDist;
+			minIdx = i;
+		}
+	}
+
+	if(minIdx==-1) //all the CDNs are heavily loaded or cdn list is empty
+		return "";
+
+	return cdnAddrList[minIdx];
+}
+
+bool MetaServer::CDN_load_OK( const string CDN_addr ) {
+	return true; //always true for now
+}
+
+bool MetaServer::isCDN_closerThanFSS(string cdnIpAddr, string clientIpAddr) {
+	double distToCDN = calculateDistance(cdnIpAddr, clientIpAddr);
+	double distToFSS = calculateDistance(m_FssIpAddr, clientIpAddr);
+	return distToCDN <= distToFSS;
+}
+
+vector< pair<string, string> > MetaServer::processListFromOriginDownload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr) {
+	vector< pair<string, string> > result;
+	ifstream file;
+	string fileName = m_file+"_v" + char('0'+m_version);
+	file.open(fileName.c_str());
+	if(!file.is_open()) {
+		cout<<"MetaServer::processListFromOriginDownload - file not opened"<<endl;
+		exit(0);
+	}
 	unordered_map<string, string> clientNameToHashMap;
 	for(int i=0; i<listFromClientApp.size(); i++) {
 		clientNameToHashMap[listFromClientApp[i].first] = listFromClientApp[i].second;
@@ -186,7 +217,7 @@ vector<pair<string, string>> MetaServer::processListFromOriginDownload(const vec
 		if(clientNameToHashMap.count(fileName)>0 && clientNameToHashMap[fileName]==fileHash) //no need to download since name and hash match
 			continue;
 		string candidateCdnAddr = getClosestCDN(cdnsThatContainFile, clientIpAddr);
-		if(isCDN_closerThanFSS(candidateCdnAddr, clientIpAddr)) { //cdn is closer than fss
+		if(candidateCdnAddr != "" && isCDN_closerThanFSS(candidateCdnAddr, clientIpAddr)) { //cdn is closer than fss
 			result.push_back(make_pair(fileName, candidateCdnAddr));
 		} else {
 			vector<string> allCDNs(m_setOfCdnIpAddr.begin(), m_setOfCdnIpAddr.end());
@@ -198,13 +229,15 @@ vector<pair<string, string>> MetaServer::processListFromOriginDownload(const vec
 	return result;
 }
 
-vector<pair<string, string>> MetaServer::processListFromOriginUpload(const vector<pair<string, string>>& listFromClientApp, string clientIpAddr) {
-	vector<pair<string, string>> result;
+vector< pair<string, string> > MetaServer::processListFromOriginUpload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr) {
+	vector< pair<string, string> > result;
 	ifstream file;
-	file.open(m_file.c_str());
-	if(!file.is_open())
-		return result; //file not open => return an empty vector
-
+	string fileName = m_file+"_v" + char('0'+m_version);
+	file.open(fileName.c_str());
+	if(!file.is_open()) {
+		cout<<"MetaServer::processListFromOriginUpload - file not opened"<<endl;
+		exit(0);
+	}
 	unordered_map<string, string> clientNameToHashMap;
 	for(int i=0; i<listFromClientApp.size(); i++) {
 		clientNameToHashMap[listFromClientApp[i].first] = listFromClientApp[i].second;
@@ -212,6 +245,7 @@ vector<pair<string, string>> MetaServer::processListFromOriginUpload(const vecto
 
 	vector<string> allCDNs(m_setOfCdnIpAddr.begin(), m_setOfCdnIpAddr.end());
 	string closestCdnAddr = getClosestCDN(allCDNs, clientIpAddr);
+	allCDNs.clear();
 
 	//add the files that exist in both FSS and client local and need to be updated
 	string currLine;
@@ -243,19 +277,92 @@ vector<pair<string, string>> MetaServer::processListFromOriginUpload(const vecto
 /*----------------------------*/
 /* for communication with CDN */
 /*----------------------------*/
-void MetaServer::deleteMetaEntry(string fileName) {
 
+void MetaServer::deleteMetaEntry(string fileName) {
+	string currFileName = m_file+"_v" + char('0'+m_version),
+		   newFileName = m_file+"_v" + char('0'+(++m_version));
+	ifstream fileIn(currFileName.c_str());
+	if(!fileIn) {
+		cout<<"MetaServer::deleteMetaEntry - file not opened"<<endl;
+		exit(0); // NEED TO CHANGE
+	}
+	ofstream fileOut(newFileName.c_str());
+	if(!fileOut) {
+		cout<<"MetaServer::deleteMetaEntry - file not opened"<<endl;
+		fileIn.close();
+		exit(0);
+	}
+	bool found = false;
+	string currLine;
+	while(getline(fileIn, currLine)) {
+		if(currLine.substr(0, fileName.size())==fileName && currLine[fileName.size()]==' ') {
+			found = true;
+			continue;
+		}
+		fileOut << currLine+"\n";
+	}
+
+	if(found==false)
+		cout<<fileName+" is not found for delete operation"<<endl;
+	fileIn.close();
+	fileOut.close();
+}
+
+string constructLine(string fileName, const string& fileHash, const vector<string>& CdnAddrList) {
+	string result = "";
+	result += fileName + " " + fileHash;
+	for(int i=0; i<CdnAddrList.size(); i++)
+		result += " " + CdnAddrList[i];
+	result += "\n";
+	return result;
 }
 
 void MetaServer::addNewMetaEntry(string fileName, const string& fileHash, const vector<string>& CdnAddrList) {
-
+	string currFileName = m_file+"_v" + char('0'+m_version);
+	ofstream file(currFileName.c_str(), ios_base::app | ios_base::out);
+	if(!file.is_open()) {
+		cout<<"MetaServer::addNewMetaEntry - file not opened"<<endl;
+		exit(0);
+	}
+	string lineToAdd = constructLine(fileName, fileHash, CdnAddrList);
+	file << lineToAdd;
+	//add a cdn ip address
+	for(int i=0; i<CdnAddrList.size(); i++)
+		addCdnIpAddr(CdnAddrList[i]);
+	file.close();
 }
 
-void MetaServer::updateMetaEntryHash(string fileName, const string& fileHash) {
-
+void MetaServer::updateMetaEntry(string fileName, const string& fileHash, const vector<string>& CdnAddrList) {
+	deleteMetaEntry(fileName);
+	addNewMetaEntry(fileName, fileHash, CdnAddrList);
 }
 
-void MetaServer::addCdnToMetaEntry(string fileName, string CdnAddrList) {
-
+void MetaServer::addCdnToMetaEntry(string fileName, string cdnAddr) {
+	string currFileName = m_file+"_v" + char('0'+m_version),
+		   newFileName = m_file+"_v" + char('0'+(++m_version));
+	ifstream fileIn(currFileName.c_str());
+	if(!fileIn) {
+		cout<<"MetaServer::addCdnToMetaEntry - file not opened"<<endl;
+		exit(0);
+	}
+	ofstream fileOut(newFileName.c_str());
+	if(!fileOut) {
+		cout<<"MetaServer::addCdnToMetaEntry - file not opened"<<endl;
+		fileIn.close();
+		exit(0);
+	}
+	bool found = false;
+	string currLine;
+	while(getline(fileIn, currLine)) {
+		if(currLine.substr(0, fileName.size())==fileName && currLine[fileName.size()]==' ') {
+			found = true;
+			currLine += " "+cdnAddr;
+		}
+		fileOut << currLine+"\n";
+	}
+	if(found==false)
+		cout<<fileName+" is not found for add CDN operation"<<endl;
+	fileIn.close();
+	fileOut.close();
 }
 
