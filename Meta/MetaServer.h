@@ -50,14 +50,14 @@ public:
 
 
 private:
-	string m_file; //currently MetaServer writes everyghing to one file; we can improve the performance later (by indexing...etc)
+	string m_file; // currently MetaServer writes everything to one file; we can improve the performance later (by indexing...etc)
 	unordered_set<string> m_setOfCdnIpAddr;
 	string m_FssIpAddr;
-	unordered_map<string, pair<double, double>> m_ipAddrToLatLngMap; //maps an IP address to geographic location
+	unordered_map<string, pair<double, double>> m_ipAddrToLatLngMap; // maps an IP address to geographic location
 
-	OriginServer* m_origin;
-	MetaCDNReceiver* m_CDN_rcvr;					// receives HTTP request from CDN
-	MetaCDNSender* m_CDN_sender;					// sends HTTP request to CDN
+	OriginServer* m_origin;				// communicating point to and from OriginServer
+	MetaCDNReceiver* m_CDN_rcvr;		// receives HTTP request from CDN
+	MetaCDNSender* m_CDN_sender;		// sends HTTP request to CDN
 };
 
 #endif
