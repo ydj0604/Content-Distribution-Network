@@ -1,6 +1,7 @@
 #ifndef META_SERVER_H
 #define META_SERVER_H
 
+/*
 #ifdef _WIN32
 	#include <unordered_map>
 	#include <unordered_set>
@@ -8,6 +9,10 @@
 	#include <tr1/unordered_map>
 	#include <tr1/unordered_set>
 #endif
+*/
+
+#include <unordered_map>
+#include <unordered_set>
 
 #include <string>
 #include <vector>
@@ -17,7 +22,7 @@ class MetaCDNReceiver;
 class MetaCDNSender;
 
 using namespace std;
-using namespace std::tr1;
+//using namespace std::tr1;
 
 class MetaServer {
 public:

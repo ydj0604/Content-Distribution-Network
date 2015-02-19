@@ -1,3 +1,5 @@
+
+/*
 #ifdef _WIN32
 	#include <unordered_map>
 	#include <unordered_set>
@@ -5,6 +7,10 @@
 	#include <tr1/unordered_map>
 	#include <tr1/unordered_set>
 #endif
+*/
+
+#include <unordered_map>
+#include <unordered_set>
 
 #include "MetaServer.h"
 #include "MetaCDNReceiver.h"
@@ -20,7 +26,7 @@
 #include <ios>
 
 using namespace std;
-using namespace std::tr1;
+//using namespace std::tr1;
 
 MetaServer::MetaServer(string file, OriginServer* origin) {
 	for(int i=0; i<file.size(); i++)
