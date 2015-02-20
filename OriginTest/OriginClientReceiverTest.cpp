@@ -9,11 +9,10 @@ using namespace http::experimental::listener;
 
 int main() {
     utility::string_t port = U("34568");
-
     utility::string_t address = U("http://localhost:");
     address.append(port);
 
-    OriginClientReceiver::intialize(address);
+    OriginClientReceiver::initialize(address);
 
     std::cout << "Press ENTER to stop OriginClientReceiver." << std::endl;
 

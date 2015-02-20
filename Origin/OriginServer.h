@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include "../Shared.h"
 
 class MetaServer;
 class OriginClientReceiver;
@@ -15,15 +16,13 @@ public:
 	OriginServer(MetaServer* meta=NULL);
 	~OriginServer();
 	void setMeta(MetaServer* meta);
-	void startListeningForClientApp();
-	void endListeningForClientApp();
-	vector< pair<string, string> > getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr);
-	vector< pair<string, string> > getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, string clientIpAddr);
+	void startListening();
+	void endListening();
+	vector< pair<string, Address> > getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr);
+	vector< pair<string, Address> > getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr);
 
 private:
 	MetaServer* m_meta;
-	OriginClientReceiver* m_client_rcvr;
-	OriginClientSender* m_client_sender;
 };
 
 #endif

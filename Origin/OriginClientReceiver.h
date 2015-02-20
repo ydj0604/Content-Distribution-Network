@@ -3,17 +3,19 @@
 
 #include "cpprest/http_listener.h"
 
+class OriginServer;
+
 using namespace web;
 using namespace http;
 using namespace utility;
 using namespace http::experimental::listener;
 
-
 class OriginClientReceiver {
 public:
-    OriginClientReceiver() {}
+    OriginClientReceiver(OriginServer* origin=NULL) { m_origin = origin; }
     OriginClientReceiver(utility::string_t url);
-    static void intialize(const string_t& address);
+    void setOrigin(OriginServer* origin) { m_origin = origin; }
+    static void initialize(const string_t& address);
     static void shutDown();
     static OriginClientReceiver* getInstance() { return m_instance; }
 
@@ -27,6 +29,7 @@ private:
     void handle_post(http_request message);
     void handle_delete(http_request message);
 
+    OriginServer* m_origin;
     http_listener m_listener;
     static OriginClientReceiver* m_instance;
 };

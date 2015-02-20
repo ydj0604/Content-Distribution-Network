@@ -1,10 +1,10 @@
-#include <unordered_map>
-#include <unordered_set>
-
 #include "MetaServer.h"
 #include "MetaCDNReceiver.h"
 #include "MetaCDNSender.h"
 #include "../Origin/OriginServer.h"
+#include "../Shared.h"
+#include <unordered_map>
+#include <unordered_set>
 #include <string>
 #include <utility>
 #include <vector>

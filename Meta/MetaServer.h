@@ -6,23 +6,11 @@
 #include <utility>
 #include <string>
 #include <vector>
+#include "../Shared.h"
 
 class OriginServer;
 
 using namespace std;
-
-struct Address {
-	pair<double, double> latLng;
-	string ipAddr;
-	Address() {
-		latLng = make_pair(0.0, 0.0);
-		ipAddr = "";
-	}
-	Address(pair<double, double> p, string s) {
-		latLng = p;
-		ipAddr = s;
-	}
-};
 
 typedef struct Address Address;
 

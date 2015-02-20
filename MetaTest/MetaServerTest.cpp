@@ -1,5 +1,6 @@
 #include <iostream>
 #include "../Meta/MetaServer.h"
+#include "../Shared.h"
 
 using namespace std;
 
