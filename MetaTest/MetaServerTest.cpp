@@ -1,14 +1,31 @@
 #include <iostream>
 #include "../Meta/MetaServer.h"
-#include "../Origin/OriginServer.h"
 
 using namespace std;
 
-void testMetaForCommunicationWithCDN() {
+void testCalculateDistance() {
+	//initialize
+	MetaServer* meta = new MetaServer("metaFile", NULL);
+
+	Address la_client(make_pair(34.05, -118.44), "0.0.0.0");
+	Address sf(make_pair(37.77, -122.42), "1.1.1.1");
+	Address seattle(make_pair(47.61, -122.33), "2.2.2.2");
+	Address bahama(make_pair(25.03, -77.40), "3.3.3.3");
+	Address northkorea(make_pair(40.34, 127.51), "4.4.4.4");
+	Address austin_fss(make_pair(30.27, -97.74), "255.255.255.255");
+
+	cout<<"la-sf "<<meta->calculateDistance(la_client, sf)<<endl;
+	cout<<"la-seattle "<<meta->calculateDistance(la_client, seattle)<<endl;
+	cout<<"la-bahama "<<meta->calculateDistance(la_client, bahama)<<endl;
+	cout<<"la-northkorea "<<meta->calculateDistance(la_client, northkorea)<<endl;
+	cout<<"la-austin "<<meta->calculateDistance(la_client, austin_fss)<<endl;
+}
+
+void testReadWrite() {
 	MetaServer *metaServer = new MetaServer("metaFile", NULL);
 	string temp;
 	while(true) {
-		cout<<"type insert/delete/update/add: "<<endl;
+		cout<<"type insert/delete/update/addcdn: "<<endl;
 		cin>>temp;
 		if(temp=="insert") {
 			string fileName, fileHash, cdnAddr;
@@ -19,12 +36,12 @@ void testMetaForCommunicationWithCDN() {
 			cin>>fileHash;
 			cout<<endl;
 			cout<<"CDN addresses: ";
-			vector<string> cdnList;
+			vector<Address> cdnList;
 			while(true) {
 				cin>>cdnAddr;
 				if(cdnAddr=="" || cdnAddr==".")
 					break;
-				cdnList.push_back(cdnAddr);
+				cdnList.push_back(MetaServer::parseAddress(cdnAddr));
 			}
 			cout<<endl;
 			metaServer->addNewMetaEntry(fileName, fileHash, cdnList);
@@ -45,17 +62,17 @@ void testMetaForCommunicationWithCDN() {
 			cin>>fileHash;
 			cout<<endl;
 			cout<<"CDN addresses: ";
-			vector<string> cdnList;
+			vector<Address> cdnList;
 			while(true) {
 				cin>>cdnAddr;
 				if(cdnAddr=="" || cdnAddr==".")
 					break;
-				cdnList.push_back(cdnAddr);
+				cdnList.push_back(MetaServer::parseAddress(cdnAddr));
 			}
 			cout<<endl;
 			metaServer->updateMetaEntry(fileName, fileHash, cdnList);
 
-		} else if(temp=="add") {
+		} else if(temp=="addcdn") {
 			string fileName, cdnAddr;
 			cout<<"file name: ";
 			cin>>fileName;
@@ -63,7 +80,7 @@ void testMetaForCommunicationWithCDN() {
 			cout<<"cdn address: ";
 			cin>>cdnAddr;
 			cout<<endl;
-			metaServer->addCdnToMetaEntry(fileName, cdnAddr);
+			metaServer->addCdnToMetaEntry(fileName, MetaServer::parseAddress(cdnAddr));
 
 		} else if(temp=="Q") {
 			break;
@@ -74,144 +91,65 @@ void testMetaForCommunicationWithCDN() {
 	}
 }
 
-void testCalculateDistance() {
-	//initialize
-	OriginServer* origin = new OriginServer();
-	MetaServer* meta = new MetaServer("metaFile", origin);
-	origin->setMeta(meta);
+void testProcess() {
+	MetaServer *meta = new MetaServer("metaFile", NULL);
 
-	//add cdns and fss
-	meta->addLatLngWithIpAddr("0.0.0.0", 34.05, -118.44); //client-la
-	meta->addLatLngWithIpAddr("1.1.1.1", 37.77, -122.42); //cdn1-sf
-	meta->addLatLngWithIpAddr("2.2.2.2", 47.61, -122.33); //cdn2-seattle
-	meta->addLatLngWithIpAddr("3.3.3.3", 25.03, -77.40); //cdn3-bahama
-	meta->addLatLngWithIpAddr("4.4.4.4", 40.34, 127.51); //cdn4-north korea
-	meta->addLatLngWithIpAddr("255.255.255.255", 30.27, -97.74); //fss-austin
+	Address la_client(make_pair(34.05, -118.44), "0.0.0.0");
+	Address sf(make_pair(37.77, -122.42), "1.1.1.1");
+	Address seattle(make_pair(47.61, -122.33), "2.2.2.2");
+	Address bahama(make_pair(25.03, -77.40), "3.3.3.3");
+	Address northkorea(make_pair(40.34, 127.51), "4.4.4.4");
+	Address austin_fss(make_pair(30.27, -97.74), "255.255.255.255");
 
-	cout<<meta->calculateDistance("0.0.0.0", "1.1.1.1")<<endl;
-	cout<<meta->calculateDistance("0.0.0.0", "2.2.2.2")<<endl;
-	cout<<meta->calculateDistance("0.0.0.0", "3.3.3.3")<<endl;
-	cout<<meta->calculateDistance("0.0.0.0", "4.4.4.4")<<endl;
-	cout<<meta->calculateDistance("0.0.0.0", "255.255.255.255")<<endl;
+	meta->addCdnAddr(sf);
+	meta->addCdnAddr(seattle);
+	meta->addCdnAddr(bahama);
+	meta->addCdnAddr(northkorea);
+	meta->setFssAddr(austin_fss);
 
-	delete origin;
+	Address closest = meta->getClosestCDN(meta->getCdnList(), la_client);
+	cout<<"Closest to client: "<< closest.ipAddr << endl;
+
+	if(meta->isCDN_closerThanFSS(northkorea, la_client))
+		cout<<"nk is closer than austin from la"<<endl;
+
+	vector<Address> acdn; acdn.push_back(sf);
+	meta->addNewMetaEntry("a", "ahash", acdn);
+
+	vector<Address> bcdn; bcdn.push_back(seattle);
+	meta->addNewMetaEntry("b", "bhash", bcdn);
+
+	vector<Address> ccdn; ccdn.push_back(bahama);
+	meta->addNewMetaEntry("c", "chash", ccdn);
+
+	vector<Address> dcdn; dcdn.push_back(northkorea);
+	meta->addNewMetaEntry("d", "dhash", dcdn);
+
+	vector<Address> ecdn;
+	ecdn.push_back(sf);
+	ecdn.push_back(seattle);
+	ecdn.push_back(bahama);
+	ecdn.push_back(northkorea);
+	meta->addNewMetaEntry("e", "ehash", ecdn);
+
+	vector<Address> fcdn; //empty
+	meta->addNewMetaEntry("f", "fhash", fcdn);
+
+	//client request
+	vector< pair<string, string> > clientList;
+	clientList.push_back(make_pair("a", "ahash1")); //file names are unique
+	clientList.push_back(make_pair("b", "bhash2"));
+	vector< pair<string, Address> > arequest = meta->processListFromOriginDownload(clientList, la_client);
+	cout<<"Client needs to download: "<<endl;
+	for(int i=0; i<arequest.size(); i++) {
+		cout<<arequest[i].first<<" from "<<arequest[i].second.ipAddr<<endl;
+	}
+
+
+	cout<<"DONE"<<endl;
 	delete meta;
 }
 
-void testWholeFlow() {
-	//initialize
-	OriginServer* origin = new OriginServer();
-	MetaServer* meta = new MetaServer("metaFile", origin);
-	origin->setMeta(meta);
-	meta->setFssIpAddr("255.255.255.255");
-
-	//add cdns and fss
-	meta->addLatLngWithIpAddr("0.0.0.0", 34.05, -118.44); //client-la
-	meta->addLatLngWithIpAddr("1.1.1.1", 37.77, -122.42); //cdn1-sf
-	meta->addLatLngWithIpAddr("2.2.2.2", 47.61, -122.33); //cdn2-seattle
-	meta->addLatLngWithIpAddr("3.3.3.3", 25.03, -77.40); //cdn3-bahama
-	meta->addLatLngWithIpAddr("4.4.4.4", 40.34, 127.51); //cdn4-north korea
-	meta->addLatLngWithIpAddr("255.255.255.255", 30.27, -97.74); //fss-austin
-
-	//add files
-	string aname="a", ahash="ahash";
-	vector<string> alist;
-	alist.push_back("1.1.1.1");
-	meta->addNewMetaEntry(aname, ahash, alist);
-
-	string bname="b", bhash="bhash";
-	vector<string> blist;
-	blist.push_back("2.2.2.2");
-	meta->addNewMetaEntry(bname, bhash, blist);
-
-	string cname="c", chash="chash";
-	vector<string> clist;
-	clist.push_back("3.3.3.3");
-	meta->addNewMetaEntry(cname, chash, clist);
-
-	string dname="d", dhash="dhash";
-	vector<string> dlist;
-	dlist.push_back("4.4.4.4");
-	meta->addNewMetaEntry(dname, dhash, dlist);
-
-	string ename="e", ehash="ehash";
-	vector<string> elist;
-	elist.push_back("1.1.1.1");
-	elist.push_back("2.2.2.2");
-	elist.push_back("3.3.3.3");
-	elist.push_back("4.4.4.4");
-	meta->addNewMetaEntry(ename, ehash, elist);
-
-	string fname="f", fhash="fhash";
-	vector<string> flist;
-	meta->addNewMetaEntry(fname, fhash, flist);
-
-	//test closest CDN
-	vector<string> cdnVec;
-	cdnVec.push_back("1.1.1.1");
-	cdnVec.push_back("2.2.2.2");
-	cdnVec.push_back("3.3.3.3");
-	cdnVec.push_back("4.4.4.4");
-	cout<<"Closest: "<<meta->getClosestCDN(cdnVec, "0.0.0.0")<<endl;
-	cout<<endl;
-
-	//test closer than FSS
-	for(int i=0; i<cdnVec.size(); i++) {
-		if(meta->isCDN_closerThanFSS(cdnVec[i], "0.0.0.0"))
-			cout<<cdnVec[i]<<" is closer than FSS"<<endl;
-	}
-	cout<<endl;
-
-	//test cdns that contain a file
-	vector<string> cdnsThatContainA = meta->getCdnsThatContainFile("a"),
-				   cdnsThatContainB = meta->getCdnsThatContainFile("b"),
-				   cdnsThatContainC = meta->getCdnsThatContainFile("c"),
-				   cdnsThatContainD = meta->getCdnsThatContainFile("d"),
-				   cdnsThatContainE = meta->getCdnsThatContainFile("e"),
-				   cdnsThatContainF = meta->getCdnsThatContainFile("f");
-
-	for(int i=0; i<cdnsThatContainA.size(); i++)
-		cout<<cdnsThatContainA[i]<<" contains a"<<endl;
-	for(int i=0; i<cdnsThatContainB.size(); i++)
-		cout<<cdnsThatContainB[i]<<" contains b"<<endl;
-	for(int i=0; i<cdnsThatContainC.size(); i++)
-		cout<<cdnsThatContainC[i]<<" contains c"<<endl;
-	for(int i=0; i<cdnsThatContainD.size(); i++)
-		cout<<cdnsThatContainD[i]<<" contains d"<<endl;
-	for(int i=0; i<cdnsThatContainE.size(); i++)
-		cout<<cdnsThatContainE[i]<<" contains e"<<endl;
-	for(int i=0; i<cdnsThatContainF.size(); i++)
-		cout<<cdnsThatContainF[i]<<" contains f"<<endl;
-	cout<<endl;
-
-	//test download list
-	vector< pair<string, string> > clientList;
-	clientList.push_back(make_pair("a", "ahash"));
-	clientList.push_back(make_pair("b", "bhash2"));
-	clientList.push_back(make_pair("g", "ghash"));
-	vector< pair<string, string> > listToDownload = meta->processListFromOriginDownload(clientList, "0.0.0.0");
-
-	cout<<"client 1 needs to download... "<<endl;
-	for(int i=0; i<listToDownload.size(); i++) {
-		string fileName = listToDownload[i].first,
-			   address = listToDownload[i].second;
-		cout<<fileName<<" from "<<address<<endl;
-	}
-	cout<<endl;
-
-	vector< pair<string, string> > clientList2;
-	vector< pair<string, string> > listToDownload2 = meta->processListFromOriginDownload(clientList2, "0.0.0.0");
-
-	cout<<"client 2 needs to download... "<<endl;
-	for(int i=0; i<listToDownload2.size(); i++) {
-		string fileName = listToDownload2[i].first,
-			   address = listToDownload2[i].second;
-		cout<<fileName<<" from "<<address<<endl;
-	}
-	cout<<endl;
-
-}
-
 int main() {
-	testWholeFlow();
+	testProcess();
 }

@@ -1,28 +1,30 @@
 #ifndef META_SERVER_H
 #define META_SERVER_H
 
-/*
-#ifdef _WIN32
-	#include <unordered_map>
-	#include <unordered_set>
-#else
-	#include <tr1/unordered_map>
-	#include <tr1/unordered_set>
-#endif
-*/
-
 #include <unordered_map>
 #include <unordered_set>
-
+#include <utility>
 #include <string>
 #include <vector>
 
 class OriginServer;
-class MetaCDNReceiver;
-class MetaCDNSender;
 
 using namespace std;
-//using namespace std::tr1;
+
+struct Address {
+	pair<double, double> latLng;
+	string ipAddr;
+	Address() {
+		latLng = make_pair(0.0, 0.0);
+		ipAddr = "";
+	}
+	Address(pair<double, double> p, string s) {
+		latLng = p;
+		ipAddr = s;
+	}
+};
+
+typedef struct Address Address;
 
 class MetaServer {
 public:
@@ -31,39 +33,35 @@ public:
 	~MetaServer();
 	void initiateMetaServer();
 	void endMetaServer();
-	void setFssIpAddr(string fss);
-	void addCdnIpAddr(string cdn);
-	void addLatLngWithIpAddr(string ipAddr, double lat, double lng);
+	void setFssAddr(Address fss);
+	void addCdnAddr(Address cdn);
+	vector<Address> getCdnList() { return m_cdnAddrList; }
 
 	//helper functions
 	void sortFileList(vector< pair<string, string> >& fileListFromOrigin);
-	double calculateDistance(string ipAddr1, string ipAddr2);
-	pair<double, double> getLatLng(string ipAddr);
+	static Address parseAddress(const string& line);
+	double calculateDistance(Address addr1, Address addr2);
 
 	//functions for communication with Origin
-	string getClosestCDN(const vector<string>& cdnAddrList, string clientIpAddr);
-	vector<string> getCdnsThatContainFile(string fileName);
-	bool isCDN_closerThanFSS(string cdnIpAddr, string clientIpAddr);
-	bool CDN_load_OK(string CDN_IpAddr);
-	vector< pair<string, string> > processListFromOriginDownload(const vector< pair<string, string> >& clientFileList, string clientIpAddr); //returns vector of (name, CDN addr)
-	vector< pair<string, string> > processListFromOriginUpload(const vector< pair<string, string> >& clientFileList, string clientIpAddr);
+	Address getClosestCDN(const vector<Address>& cdnAddrList, Address clientAddr);
+	vector<Address> getCdnsThatContainFile(string fileName);
+	bool isCDN_closerThanFSS(Address cdnAddr, Address clientAddr);
+	bool CDN_load_OK(Address cdnAddr);
+	vector< pair<string, Address> > processListFromOriginDownload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
+	vector< pair<string, Address> > processListFromOriginUpload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
 
 	//functions for communication with CDN
 	void deleteMetaEntry(string fileName);
-	void addNewMetaEntry(string fileName, const string& fileHash, const vector<string>& CdnAddrList);
-	void updateMetaEntry(string fileName, const string& fileHash, const vector<string>& CdnAddrList);
-	void addCdnToMetaEntry(string fileName, string cdnAddr);
+	void addNewMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
+	void updateMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
+	void addCdnToMetaEntry(string fileName, Address cdnAddr);
 
 private:
 	string m_file; //currently MetaServer writes everyghing to one file; we can improve the performance later (by indexing...etc)
 	int m_version;
-	unordered_set<string> m_setOfCdnIpAddr;
-	string m_FssIpAddr;
-	unordered_map< string, pair<double, double> > m_ipAddrToLatLngMap; //maps an IP address to geographic location
-
+	vector<Address> m_cdnAddrList;
+	Address m_FssAddr;
 	OriginServer* m_origin;				// communicating point to and from OriginServer
-	MetaCDNReceiver* m_CDN_rcvr;		// receives HTTP request from CDN
-	MetaCDNSender* m_CDN_sender;		// sends HTTP request to CDN
 };
 
 #endif
