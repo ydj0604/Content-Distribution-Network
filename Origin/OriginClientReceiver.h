@@ -31,6 +31,5 @@ private:
     static OriginClientReceiver* m_instance;
 };
 
-OriginClientReceiver* OriginClientReceiver::m_instance = NULL;
 
 #endif

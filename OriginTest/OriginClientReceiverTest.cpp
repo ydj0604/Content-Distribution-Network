@@ -15,7 +15,7 @@ int main() {
 
     OriginClientReceiver::intialize(address);
 
-    std::cout << "Press ENTER to exit." << std::endl;
+    std::cout << "Press ENTER to stop OriginClientReceiver." << std::endl;
 
     std::string line;
     std::getline(std::cin, line);
