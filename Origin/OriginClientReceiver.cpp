@@ -58,37 +58,28 @@ void OriginClientReceiver::handle_post(http_request message) {
 	try {
 		if(message.headers().content_type()==U("application/json")) {
 			json::value jsonObj = message.extract_json().get();
-			json::value& type = jsonObj.at(U("Type"));
-			json::value& ip = jsonObj.at(U("IP"));
-			json::value& lat = jsonObj.at(U("Lat"));
-			json::value& lng = jsonObj.at(U("Lng"));
-
-			Address clientAddr(make_pair(lat.as_double(), lng.as_double()), utility::conversions::to_utf8string(ip.as_string()));
+			Address clientAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string()));
 			vector< pair<string, string> > clientList;
 
-			if(type.as_integer() == 0) { //sync up
+			if(jsonObj.at(U("Type")).as_integer() == 0) { //sync up
 				//...
 				message.reply(status_codes::OK, U("Good"));
-			} else if(type.as_integer() == 1) { //sync down
+			} else if(jsonObj.at(U("Type")).as_integer() == 1) { //sync down
 				json::value& list = jsonObj.at(U("FileList"));
 				for(auto& fileObj : list.as_array()) {
-					json::value& fileNameJson = fileObj.at(U("Name"));
-					json::value& fileHashJson = fileObj.at(U("Hash"));
-					clientList.push_back(make_pair(utility::conversions::to_utf8string(fileNameJson.as_string()), utility::conversions::to_utf8string(fileHashJson.as_string())));
+					clientList.push_back(make_pair(utility::conversions::to_utf8string(fileObj.at(U("Name")).as_string()), utility::conversions::to_utf8string(fileObj.at(U("Hash")).as_string())));
 				}
 				vector< pair<string, Address> > resultList = m_origin->getListOfFilesDownload(clientList, clientAddr); //internal computation including meta server
-				json::value respType = json::value::number(1); //now construct json from resultList and reply to the message
+				//now construct json from resultList and reply to the message
 				json::value respList = json::value::array();
 				for(int i=0; i<resultList.size(); i++) {
 					json::value currFileObj = json::value::object();
-					json::value currFileName = json::value::string(U(resultList[i].first));
-					json::value currFileAddr = json::value::string(U(resultList[i].second.ipAddr));
-					currFileObj[U("Name")] = currFileName;
-					currFileObj[U("Address")] = currFileAddr;
+					currFileObj[U("Name")] = json::value::string(U(resultList[i].first));
+					currFileObj[U("Address")] = json::value::string(U(resultList[i].second.ipAddr));
 					respList[i] = currFileObj;
 				}
 				json::value respFinal = json::value::object();
-				respFinal[U("Type")] = respType;
+				respFinal[U("Type")] = json::value::number(1);
 				respFinal[U("FileList")] = respList;
 				message.reply(status_codes::OK, respFinal);
 			} else { //undefined
