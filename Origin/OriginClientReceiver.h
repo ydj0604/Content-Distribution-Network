@@ -15,7 +15,7 @@ public:
     OriginClientReceiver(OriginServer* origin=NULL) { m_origin = origin; }
     OriginClientReceiver(utility::string_t url);
     void setOrigin(OriginServer* origin) { m_origin = origin; }
-    static void initialize(const string_t& address);
+    static void initialize(const string_t& address, OriginServer* origin);
     static void shutDown();
     static OriginClientReceiver* getInstance() { return m_instance; }
 

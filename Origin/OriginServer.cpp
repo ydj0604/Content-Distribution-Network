@@ -23,7 +23,7 @@ void OriginServer::startListening() {
 	utility::string_t port = U("5000");
 	utility::string_t address = U("http://localhost:");
 	address.append(port);
-	OriginClientReceiver::initialize(address);
+	OriginClientReceiver::initialize(address, this);
 }
 
 void OriginServer::endListening() {
