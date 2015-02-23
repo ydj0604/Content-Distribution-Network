@@ -18,17 +18,11 @@ public:
     static void initialize(const string_t& address, OriginServer* origin);
     static void shutDown();
     static OriginClientReceiver* getInstance() { return m_instance; }
-
     pplx::task<void> open() { return m_listener.open(); }
     pplx::task<void> close() { return m_listener.close(); }
 
 private:
-
-    void handle_get(http_request message);
-    void handle_put(http_request message);
     void handle_post(http_request message);
-    void handle_delete(http_request message);
-
     OriginServer* m_origin;
     http_listener m_listener;
     static OriginClientReceiver* m_instance;

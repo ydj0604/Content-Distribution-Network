@@ -19,10 +19,10 @@ public:
 	//basic functions
 	MetaServer(string file, OriginServer* origin);
 	~MetaServer();
-	void initiateMetaServer();
-	void endMetaServer();
-	void setFssAddr(Address fss);
-	void addCdnAddr(Address cdn);
+	void startListening();
+	void endListening();
+	int setFssAddr(Address fss);
+	int addCdnAddr(Address cdn);
 	vector<Address> getCdnList() { return m_cdnAddrList; }
 
 	//helper functions
@@ -39,14 +39,17 @@ public:
 	vector< pair<string, Address> > processListFromOriginUpload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
 
 	//functions for communication with CDN
-	void deleteMetaEntry(string fileName);
-	void addNewMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
-	void updateMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
-	void addCdnToMetaEntry(string fileName, Address cdnAddr);
+	int deleteMetaEntry(string fileName);
+	int addNewMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
+	int updateMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
+	int addCdnToMetaEntry(string fileName, Address cdnAddr);
+	int deleteCdnFromMetaEntry(string fileName, Address cdnAddr);
 
 private:
+	void updateVersion();
 	string m_file; //currently MetaServer writes everyghing to one file; we can improve the performance later (by indexing...etc)
 	int m_version;
+	int m_nextCDNId;
 	vector<Address> m_cdnAddrList;
 	Address m_FssAddr;
 	OriginServer* m_origin;				// communicating point to and from OriginServer

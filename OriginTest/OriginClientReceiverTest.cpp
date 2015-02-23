@@ -60,12 +60,14 @@ void endToEndTest() {
 	vector<Address> fcdn; //empty
 	meta->addNewMetaEntry("f", "fhash", fcdn);
 
-	//start origin server
+	//start servers
 	origin->startListening();
-    std::cout << "Press ENTER to stop OriginClientReceiver." << std::endl;
+	meta->startListening();
+    std::cout << "Press ENTER to stop Origin and Meta." << std::endl;
     std::string line;
     std::getline(std::cin, line);
     origin->endListening();
+    meta->endListening();
 }
 
 int main() {

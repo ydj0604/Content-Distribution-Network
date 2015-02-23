@@ -5,7 +5,7 @@
 using namespace std;
 
 struct Address {
-	pair<double, double> latLng;
+	pair<double, double> latLng; //always keep 2 decimal digits for latitude and longitude
 	string ipAddr;
 	Address() {
 		latLng = make_pair(0.0, 0.0);
