@@ -11,99 +11,44 @@ using namespace http;
 using namespace web::http::experimental::listener;
 using namespace json;
 
-MetaCDNReceiver* MetaCDNReceiver::m_updateInstance = NULL;
-MetaCDNReceiver* MetaCDNReceiver::m_deleteInstance = NULL;
-MetaCDNReceiver* MetaCDNReceiver::m_registerInstance = NULL;
+MetaCDNReceiver* MetaCDNReceiver::m_instance = NULL;
 
-MetaCDNReceiver::MetaCDNReceiver(utility::string_t url, int type) : m_listener(url) { //1=update, 2=delete, 3=register
-	if(type==1)
-		m_listener.support(methods::POST, std::bind(&MetaCDNReceiver::handle_post, this, std::placeholders::_1));
-	else if(type==2)
-		m_listener.support(methods::DEL, std::bind(&MetaCDNReceiver::handle_delete, this, std::placeholders::_1));
-	else if(type==3)
-		m_listener.support(methods::POST, std::bind(&MetaCDNReceiver::handle_register, this, std::placeholders::_1));
+MetaCDNReceiver::MetaCDNReceiver(utility::string_t update_url, utility::string_t delete_url, utility::string_t register_url) :
+		m_update_listener(update_url), m_delete_listener(delete_url), m_register_listener(register_url) {
+	m_update_listener.support(methods::POST, std::bind(&MetaCDNReceiver::handle_update, this, std::placeholders::_1));
+	m_delete_listener.support(methods::DEL, std::bind(&MetaCDNReceiver::handle_delete, this, std::placeholders::_1));
+	m_register_listener.support(methods::POST, std::bind(&MetaCDNReceiver::handle_register, this, std::placeholders::_1));
 }
 
 void MetaCDNReceiver::initialize(const string_t& address, MetaServer* meta) {
-	MetaCDNReceiver* updateInstance = MetaCDNReceiver::getUpdateInstance();
+	MetaCDNReceiver* instance = MetaCDNReceiver::getInstance();
 	uri_builder updateUri(address);
 	updateUri.append_path(U("meta/update"));
-	updateInstance = new MetaCDNReceiver(updateUri.to_uri().to_string(), 1);
-	updateInstance->setMeta(meta);
-	updateInstance->open().wait();
-	ucout << utility::string_t(U("MetaCDNReceiver is listening for update requests at: ")) << updateUri.to_uri().to_string() << std::endl;
-
-	MetaCDNReceiver* deleteInstance = MetaCDNReceiver::getDeleteInstance();
 	uri_builder deleteUri(address);
 	deleteUri.append_path(U("meta/delete"));
-	deleteInstance = new MetaCDNReceiver(deleteUri.to_uri().to_string(), 2);
-	deleteInstance->setMeta(meta);
-	deleteInstance->open().wait();
-	ucout << utility::string_t(U("MetaCDNReceiver is listening for delete requests at: ")) << deleteUri.to_uri().to_string() << std::endl;
-
-	MetaCDNReceiver* registerInstance = MetaCDNReceiver::getRegisterInstance();
 	uri_builder registerUri(address);
 	registerUri.append_path(U("meta/register"));
-	registerInstance = new MetaCDNReceiver(registerUri.to_uri().to_string(), 3);
-	registerInstance->setMeta(meta);
-	registerInstance->open().wait();
+	instance = new MetaCDNReceiver(updateUri.to_uri().to_string(), deleteUri.to_uri().to_string(), registerUri.to_uri().to_string());
+	instance->setMeta(meta);
+	instance->updateOpen().wait();
+	instance->deleteOpen().wait();
+	instance->registerOpen().wait();
+	ucout << utility::string_t(U("MetaCDNReceiver is listening for update requests at: ")) << updateUri.to_uri().to_string() << std::endl;
+	ucout << utility::string_t(U("MetaCDNReceiver is listening for delete requests at: ")) << deleteUri.to_uri().to_string() << std::endl;
 	ucout << utility::string_t(U("MetaCDNReceiver is listening for register requests at: ")) << registerUri.to_uri().to_string() << std::endl;
 }
 
 void MetaCDNReceiver::shutDown() {
-	MetaCDNReceiver *updateInstance = MetaCDNReceiver::getUpdateInstance(),
-					*deleteInstance = MetaCDNReceiver::getDeleteInstance(),
-					*registerInstance = MetaCDNReceiver::getRegisterInstance();
-	if(updateInstance==NULL || deleteInstance==NULL || registerInstance==NULL)
+	MetaCDNReceiver *instance = MetaCDNReceiver::getInstance();
+	if(instance == NULL)
 		return;
-	updateInstance->close().wait();
-	deleteInstance->close().wait();
-	registerInstance->close().wait();
-	delete updateInstance;
-	delete deleteInstance;
-	delete registerInstance;
+	instance->updateClose().wait();
+	instance->deleteClose().wait();
+	instance->registerClose().wait();
+	delete instance;
 }
 
-void MetaCDNReceiver::handle_register(http_request message) {
-	/*
-	-when a new CDN joins, it has to register itself to Meta Server
-
-	JSON Format
-	Request
-	{
-		"Type": 0,
-		"IP": "1.1.1.1", //the sender CDN's IP address
-		"Lat": 23.00, //the sender CDN's location
-		"Lng": 148.12
-	}
-	Response
-	{
-		"ID": 1 //the assigned id for the cdn
-	}
-
-	*/
-	try {
-		int assignedId = -1;
-		if(message.headers().content_type()==U("application/json")) {
-			json::value jsonObj = message.extract_json().get();
-			string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
-			//TODO: validate ip address
-			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
-			assignedId = m_meta->addCdnAddr(cdnAddr);
-			json::value respFinal = json::value::object();
-			respFinal[U("ID")] = json::value::number(assignedId);
-			message.reply(assignedId!=-1? status_codes::OK : status_codes::NotFound, respFinal);
-		} else {
-			message.reply(status_codes::Forbidden, U("Json object is required"));
-		}
-	} catch(json::json_exception &e) {
-		message.reply(status_codes::Forbidden, U("Invalid json object"));
-		return;
-	}
-	return;
-}
-
-void MetaCDNReceiver::handle_post(http_request message) {
+void MetaCDNReceiver::handle_update(http_request message) {
 	/*
 	Use cases:
 	1. when CDN pulls a file from FSS (syncdown flow)
@@ -192,6 +137,45 @@ void MetaCDNReceiver::handle_delete(http_request message) {
 			string fileName = utility::conversions::to_utf8string(jsonObj.at(U("FileName")).as_string());
 			result = m_meta->deleteCdnFromMetaEntry(fileName, cdnAddr);
 			message.reply(result==0? status_codes::OK : status_codes::NotFound, result==0? U("Deleted successfully") : U("Delete failed"));
+		} else {
+			message.reply(status_codes::Forbidden, U("Json object is required"));
+		}
+	} catch(json::json_exception &e) {
+		message.reply(status_codes::Forbidden, U("Invalid json object"));
+		return;
+	}
+	return;
+}
+
+void MetaCDNReceiver::handle_register(http_request message) {
+	/*
+	-when a new CDN joins, it has to register itself to Meta Server
+
+	JSON Format
+	Request
+	{
+		"Type": 0,
+		"IP": "1.1.1.1", //the sender CDN's IP address
+		"Lat": 23.00, //the sender CDN's location
+		"Lng": 148.12
+	}
+	Response
+	{
+		"ID": 1 //the assigned id for the cdn
+	}
+
+	*/
+	try {
+		int assignedId = -1;
+		if(message.headers().content_type()==U("application/json")) {
+			json::value jsonObj = message.extract_json().get();
+			string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
+			//TODO: validate ip address
+			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
+			assignedId = m_meta->addCdnAddr(cdnAddr);
+			json::value respFinal = json::value::object();
+			respFinal[U("ID")] = json::value::number(assignedId);
+			message.reply(assignedId!=-1? status_codes::OK : status_codes::NotFound, respFinal);
 		} else {
 			message.reply(status_codes::Forbidden, U("Json object is required"));
 		}

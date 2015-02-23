@@ -320,7 +320,7 @@ int MetaServer::deleteMetaEntry(string fileName) {
 	fileOut.close();
 
 	if(found==false) {
-		cout<<fileName+" is not found for delete operation"<<endl;
+		cout<<"MetaServer::deleteMetaEntry - "+fileName+" is not found for delete operation"<<endl;
 		return -1;
 	}
 	return 0;
