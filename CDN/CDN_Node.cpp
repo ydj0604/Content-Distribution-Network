@@ -1,4 +1,5 @@
 #include "CDN_Node.h"
+#include "csv.h" //use CSV parser
 #include <string>
 #include <stdio.h>
 #include <dirent.h>
@@ -14,12 +15,15 @@ using namespace std;
 
 
 CDN_Node::CDN_Node() {
+    
     //initialize all variables and objects
 		//is_locked = false;
 
 		//creating file directory
         make_storage();
-    cout << "test" << endl;
+    //set the external IpAddress and convert into number for location
+    get_and_set_CDN_addr();
+    
 
 }
 
@@ -55,7 +59,7 @@ bool CDN_Node::make_storage() {
 }
 
 
-bool CDN_Node::look_up_and_update_storage(string filename, int signal) {
+bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 		/*
 			Given filename, and signal is 0, look up the storage of Node and return true if there is match.
 		
@@ -87,28 +91,9 @@ bool CDN_Node::look_up_and_update_storage(string filename, int signal) {
 			return false;
 }
 
-/*
-	bool CDN_Node::update_storage(string filename){
-        
-        if(look_up_storage(filename) == true){
-            
-            //convert string to char
-            const char* cstr = filename.c_str();
-            
-            if((dir = opendir(wd)) != NULL) {
-                remove(cstr);
-            }
-                closedir (dir);
-            
-        }
- 
-			When new information about the file in the cache is received, replace that file to new one or just clear it from the cache.
- 
-        return true;
-	}
-*/
 
-bool CDN_Node::trasfer_file_to_clients(string client_address, string filename, int filehash) {
+
+bool CDN_Node::transfer_file_to_clients(string client_address, string filename, int filehash) {
 		/*
 			When Origin Server request the transfer the certain file to Clients, sending it to client_address directly.
 		*/
@@ -118,7 +103,7 @@ bool CDN_Node::trasfer_file_to_clients(string client_address, string filename, i
 bool CDN_Node::get_file_from_storage (string filename, int filehash){
 
 		/*
-			If the file can be get from the cache, dispatch it and return the file.
+			If the file can be get from the storage, dispatch it and return the file.
 		*/
         return true;
 }
@@ -126,7 +111,7 @@ bool CDN_Node::get_file_from_storage (string filename, int filehash){
 bool CDN_Node::get_file_from_FSS (string filename, int filehash){
 		
 		/*
-			Get the file from FSS and send to client. Then, save it to the Cache.
+			Get the file from FSS and send to client. Then, save it to the Cache if possible.
 		*/
         return true;
 }
@@ -139,10 +124,14 @@ bool CDN_Node::save_file_to_FSS (string filename, int filehash){
         return true;
 }
 	
-void CDN_Node::managing_files() {
+bool CDN_Node::managing_files() {
 		/*
 			Manage the file storage to maintain its free-capacity.
 		*/
+    if(this->get_size_of_storage() > storage_capacity) {
+        return false;
+    }
+    return true;
 }
 
 long long CDN_Node::get_size_of_storage() {
@@ -172,6 +161,100 @@ char* CDN_Node::path_maker(const char* name){
 
 }
 
+void CDN_Node::get_and_set_CDN_addr() {
+    
+    string line;
+    ifstream IPFile;
+    int n = 0;
+    int i = 0;
+    int m = 0;
+    string test;
+    string s;
+    vector <int> store(4);
+    
+    system("curl ipecho.net/plain > ip.txt");
+    
+    IPFile.open ("ip.txt");
+    
+    if(IPFile.is_open())
+    {
+        getline(IPFile,line);
+        string test = line;
+        
+        
+        int count = test.length();
+        
+        while (n < count) {
+            
+            if(line[n] == '.') {
+                i = atoi(s.c_str());
+                
+                store[m]=i;
+                
+                s ="";
+                m++;
+                n++;
+                continue;
+            }
+            s = s + line[n];
+            n++;
+            
+        }
+        
+        i = atoi(s.c_str());
+        store[m] = i;
+        IPFile.close();
+    }
+    
+    this->CDN_addr = (16777216 * store[0]) + (65536 * store[1]) + (256 * store[2]) + store[3];
+
+}
+
+pair <double, double> CDN_Node::get_gps_info (){
+
+    ifstream f;
+    string str;
+    CData data;
+    vector<CData> vdata;
+    
+
+    f.open("/Users/wonjaelee/desktop/USA_edit.csv");
+    
+    if (!f.is_open())
+    {
+        cout << "failed to open the file!" << endl;
+    }
+    
+    f >> str; // omit the header
+    
+    while(!f.eof())
+    {
+        //f >> index >> ch;
+        data.Load(f);
+        if (f.eof()) {
+            vdata.push_back(data);
+            break;
+        }
+        vdata.push_back(data);
+    }
+    
+    f.close();
+    
+    vector<CData>::iterator it;
+    int n = 0;
+    
+    for (it=vdata.begin();it!=vdata.end();it++)
+    {
+        if(CDN_addr >= vdata.at(n).GetStart() && CDN_addr <= vdata.at(n).GetEnd()) {
+            cdn_gps.first = vdata.at(n).GetLatitude();
+            cdn_gps.second = vdata.at(n).GetLongitude();
+            return cdn_gps;
+        }
+       n++;
+    }
+    
+    return cdn_gps;
+}
 
 
 /*

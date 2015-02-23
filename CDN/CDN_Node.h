@@ -5,13 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdio.h>
-/*
-#include "OriginServerReceiver.h"
-#include "OriginServerSender.h"
-#include "FSSReceiver.h"
-#include "FSSSender.h"
-#include "MetaServer.h"
-*/
+#include <utility>
 
 //for creating directory
 #include <sys/stat.h>
@@ -27,11 +21,12 @@ public:
 	~CDN_Node();
 	bool make_storage();
 
-	bool look_up_and_update_storage(string filename, int signal);
+	bool look_up_and_remove_storage(string filename, int signal);
 
-	bool update_storage(string filename);
-	bool trasfer_file_to_clients(string client_address, string filename, int filehash);
-
+	bool transfer_file_to_clients(string client_address, string filename, int filehash);
+    
+    bool transfer_file_from_clients(string client_address, string filename);
+    
 	bool get_file_from_storage (string filename, int filehash);
 	bool get_file_from_FSS (string filename, int filehash);
 	bool save_file_to_FSS (string filename, int filehash);
@@ -39,9 +34,12 @@ public:
     long long get_size_of_storage();
     char* path_maker(const char* name);
     
-	void managing_files();
+	bool managing_files();
 	void lock_the_storage();
 	void unlock_the_storage();
+    
+    void get_and_set_CDN_addr();
+    pair <double, double> get_gps_info ();
 
 /*
 To do
@@ -53,13 +51,14 @@ private:
     DIR *dir;
     struct dirent *ent;
     
-	int CDN_addr;	// CDN's IP address
+    long long storage_capacity = 1000000000000;
+	long CDN_addr;	// CDN's IP address
     char wd[256];  // use an actual buffer, not a pointer
 	//string file_path; //storage path name
 
 	long long size_of_storage = 0; //Count the number of files in CDN Nodes
 	//bool is_locked;
-
+    pair <double, double> cdn_gps; //Location info for CDN
 	
 };
 
