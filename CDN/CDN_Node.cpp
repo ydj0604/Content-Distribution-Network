@@ -153,6 +153,8 @@ long long CDN_Node::get_size_of_storage() {
         return size_of_storage;
 }
 
+
+
 char* CDN_Node::path_maker(const char* name){
     char path_file[256];
     strcpy(path_file, wd);
@@ -160,6 +162,12 @@ char* CDN_Node::path_maker(const char* name){
     return strcat(path_file, name);
 
 }
+
+
+/*
+ Before get the gps information, we have to convert IP address into some certain numbers that fit into
+ GPS lookup table. So we have to get external IP address first. Then split and convert it into integers.
+ */
 
 void CDN_Node::get_and_set_CDN_addr() {
     
@@ -181,11 +189,12 @@ void CDN_Node::get_and_set_CDN_addr() {
         getline(IPFile,line);
         string test = line;
         
-        
+        //get the length of string
         int count = test.length();
         
         while (n < count) {
             
+            //When we encounter '.', we split the string and convert it into intger
             if(line[n] == '.') {
                 i = atoi(s.c_str());
                 
@@ -200,15 +209,20 @@ void CDN_Node::get_and_set_CDN_addr() {
             n++;
             
         }
-        
+        //convert remaining part and push it into vecotr
         i = atoi(s.c_str());
         store[m] = i;
         IPFile.close();
     }
     
+    //convert ip numbers for GPS information
     this->CDN_addr = (16777216 * store[0]) + (65536 * store[1]) + (256 * store[2]) + store[3];
 
 }
+
+/*
+ Using the numbers attained from above, we can get gps information from CSV file which contain USA local latitude and longitude information.
+ */
 
 pair <double, double> CDN_Node::get_gps_info (){
 
@@ -217,7 +231,7 @@ pair <double, double> CDN_Node::get_gps_info (){
     CData data;
     vector<CData> vdata;
     
-
+    //this path have to change.
     f.open("/Users/wonjaelee/desktop/USA_edit.csv");
     
     if (!f.is_open())
