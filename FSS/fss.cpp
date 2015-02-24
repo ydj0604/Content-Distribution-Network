@@ -24,6 +24,7 @@ FSS::FSS() {
 
 FSS::~FSS() {
   get_listener.close();
+  post_listener.close();
 }
 
 void FSS::listen() {
