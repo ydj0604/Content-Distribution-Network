@@ -20,9 +20,9 @@ public:
 private:
   // Request function
   void handle_get(http_request message);
-  void handle_put(http_request message);
+  void handle_post(http_request message);
   http_listener get_listener;
-  http_listener put_listener;
+  http_listener post_listener;
 
   // Other utility
   bool has_file(string filePath);

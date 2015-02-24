@@ -10,9 +10,16 @@ using namespace json;
 using namespace web::http::experimental::listener;
 
 FSS::FSS() {
-  get_listener = http_listener(FSS_ADDR);
-
+  uri_builder getUri(FSS_ADDR);
+  getUri.append_path("get");
+  get_listener = http_listener(getUri.to_uri().to_string());
   get_listener.support(methods::GET, std::bind(&FSS::handle_get, this, std::placeholders::_1));
+
+
+  uri_builder postUri(FSS_ADDR);
+  postUri.append_path("post");
+  post_listener = http_listener(postUri.to_uri().to_string());
+  post_listener.support(methods::POST, std::bind(&FSS::handle_post, this, std::placeholders::_1));
 }
 
 FSS::~FSS() {
@@ -23,6 +30,9 @@ void FSS::listen() {
   cout << "[ FSS ] Listening at address " << FSS_ADDR << endl;
   try {
     get_listener
+      .open()
+      .wait();
+    post_listener
       .open()
       .wait();
 
@@ -55,6 +65,10 @@ void FSS::handle_get(http_request message) {
     message.reply(status_codes::OK, get_file_contents(filePath));
   else
     message.reply(status_codes::NotFound, "");
+}
+
+void FSS::handle_post(http_request message) {
+  cout << "post recieved " << message.relative_uri().to_string() << endl;
 }
 
 bool FSS::has_file(string filePath) {
