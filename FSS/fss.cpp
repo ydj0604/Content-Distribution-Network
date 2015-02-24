@@ -81,11 +81,13 @@ void FSS::handle_post(http_request message) {
    */
   string fileName = message.relative_uri().to_string();
   string filePath = FSS_DIR + fileName;
+  string contents = message.extract_string().get();
 
   // Diagnostics
   cout << endl << "---------------"<< endl;
   cout << "POST " << filePath << endl;
   cout << message.to_string() << endl;
+  cout << contents << endl;
 
   // Create paths as needed
   // As usual, ignore injection and other security concerns, because school project
@@ -93,6 +95,14 @@ void FSS::handle_post(http_request message) {
   int ret = system(cmd.c_str());
   if (ret != 0)
     cout << "Error creating directories for path " << filePath << endl;
+
+  // Write to file
+  ofstream f;
+  f.open(filePath);
+  f << contents;
+  f.close();
+
+  message.reply(status_codes::OK, "");
 }
 
 bool FSS::has_file(string filePath) {
