@@ -10,11 +10,9 @@ using namespace json;
 using namespace web::http::experimental::listener;
 
 FSS::FSS() {
-  string addr = "http://localhost:5000/";
-  get_listener = http_listener(addr);
+  get_listener = http_listener(FSS_ADDR);
+
   get_listener.support(methods::GET, std::bind(&FSS::handle_get, this, std::placeholders::_1));
-  cout << "listening at address " << addr << endl;
-  get_listener.open().wait();
 }
 
 FSS::~FSS() {
@@ -22,11 +20,15 @@ FSS::~FSS() {
 }
 
 void FSS::listen() {
-  while (1) {
-    // listen for http
-    // either
-    // save file
-    // or respond with file contents
+  cout << "[ FSS ] Listening at address " << FSS_ADDR << endl;
+  try {
+    get_listener
+      .open()
+      .wait();
+
+      while (1);
+  } catch (exception const &e) {
+    cout << e.what() << endl;
   }
 }
 
@@ -39,4 +41,6 @@ void FSS::handle_get(http_request message) {
   // Diagnostics
   cout << message.to_string() << endl;
   cout << fileName << endl;
+
+  message.reply(status_codes::OK, "test");
 }

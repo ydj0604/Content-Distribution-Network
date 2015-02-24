@@ -8,6 +8,8 @@ using namespace utility;
 using namespace http;
 using namespace web::http::experimental::listener;
 
+#define FSS_ADDR "http://localhost:5000/"
+
 class FSS {
 public:
   FSS();
