@@ -1,6 +1,7 @@
 #include "fss.h"
 #include "cpprest/http_listener.h"
 #include <iostream>
+#include <stdlib.h> // for system calls
 
 using namespace std;
 using namespace web;
@@ -45,7 +46,7 @@ void FSS::listen() {
 
 void FSS::handle_get(http_request message) {
   /*
-   * Envoked when cdn would like to recieve a file
+   * Invoked when cdn would like to recieve a file
    *
    * Responds with either
    *  200 OK, and file contents
@@ -69,7 +70,29 @@ void FSS::handle_get(http_request message) {
 }
 
 void FSS::handle_post(http_request message) {
-  cout << "post recieved " << message.relative_uri().to_string() << endl;
+  /*
+   * Invoked when cdn would like to place a file
+   * /post/path/to/file.txt
+   *
+   * Places post content body in file of that path
+   *
+   * Responds with
+   *  200 OK, always
+   */
+  string fileName = message.relative_uri().to_string();
+  string filePath = FSS_DIR + fileName;
+
+  // Diagnostics
+  cout << endl << "---------------"<< endl;
+  cout << "POST " << filePath << endl;
+  cout << message.to_string() << endl;
+
+  // Create paths as needed
+  // As usual, ignore injection and other security concerns, because school project
+  string cmd = "mkdir -p $(dirname " + filePath + ")";
+  int ret = system(cmd.c_str());
+  if (ret != 0)
+    cout << "Error creating directories for path " << filePath << endl;
 }
 
 bool FSS::has_file(string filePath) {
