@@ -30,7 +30,6 @@ void OriginClientReceiver::initialize(const string_t& address, OriginServer* ori
 	instance->open_sync().wait();
 	ucout << utility::string_t(U("OriginClientReceiver is listening for client up/down requests at: ")) << uri_explicit.to_uri().to_string() << std::endl;
 	ucout << utility::string_t(U("OriginClientReceiver is listening for client sync requests at: ")) << uri_sync.to_uri().to_string() << std::endl;
-	return;
 }
 
 void OriginClientReceiver::shutDown() {
@@ -40,7 +39,6 @@ void OriginClientReceiver::shutDown() {
 	instance->close_explicit().wait();
 	instance->close_sync().wait();
 	delete instance;
-	return;
 }
 
 void OriginClientReceiver::handle_sync(http_request message) {
@@ -118,7 +116,4 @@ void OriginClientReceiver::handle_explicit(http_request message) {
 		message.reply(status_codes::Forbidden, U("Invalid json object"));
 		return;
 	}
-	return;
 }
-
-

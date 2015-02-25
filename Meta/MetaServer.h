@@ -22,19 +22,17 @@ public:
 	void startListening();
 	void endListening();
 	int setFssAddr(Address fss);
-	int addCdnAddr(Address cdn);
-	vector<Address> getCdnList() { return m_cdnAddrList; }
+	int registerCdn(Address cdn);
+	int unregisterCdn(int cdnId);
 
 	//helper functions
-	void sortFileList(vector< pair<string, string> >& fileListFromOrigin);
-	static Address parseAddress(const string& line);
 	double calculateDistance(Address addr1, Address addr2);
 
 	//functions for communication with Origin
-	Address getClosestCDN(const vector<Address>& cdnAddrList, Address clientAddr);
-	vector<Address> getCdnsThatContainFile(string fileName);
-	bool isCDN_closerThanFSS(Address cdnAddr, Address clientAddr);
-	bool CDN_load_OK(Address cdnAddr);
+	int getClosestCDN(const vector<int>& cdnIdList, Address clientAddr);
+	vector<int> getCdnsThatContainFile(string fileName);
+	bool isCDN_closerThanFSS(int cdnId, Address clientAddr);
+	bool CDN_load_OK(int cdnId);
 
 	vector< pair<string, Address> > processListFromOriginDownload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
 	vector< pair<string, Address> > processListFromOriginUpload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
@@ -42,10 +40,10 @@ public:
 	//functions for communication with CDN
 	bool doesExist(string fileName);
 	int deleteMetaEntry(string fileName);
-	int addNewMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
-	int updateMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
-	int addCdnToMetaEntry(string fileName, Address cdnAddr);
-	int deleteCdnFromMetaEntry(string fileName, Address cdnAddr);
+	int addNewMetaEntry(string fileName, const string& fileHash, const vector<int>& cdnIdList);
+	int updateMetaEntry(string fileName, const string& fileHash, const vector<int>& cdnIdList);
+	int addCdnToMetaEntry(string fileName, int cdnId);
+	int deleteCdnFromMetaEntry(string fileName, int cdnId);
 
 	//functions for timestamp management
 	int processSyncWithTimeStamp(const vector< pair<string, long long> >& clientFileList,
@@ -62,9 +60,9 @@ private:
 	int m_version;
 	int m_version_timestamp;
 	int m_nextCDNId;
-	vector<Address> m_cdnAddrList;
+	unordered_map<int, Address> m_cdnIdToAddrMap; //key=id
 	Address m_FssAddr;
-	OriginServer* m_origin; //communicating point to and from OriginServer
+	OriginServer* m_origin;
 };
 
 #endif

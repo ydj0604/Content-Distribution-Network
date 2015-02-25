@@ -62,9 +62,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 		"Type": 0, // 0=CDN pulls a file from FSS, 1=CDN updates a file (+invalidation process), 2=CDN creates a new file and stores in FSS
 		"FileName": "a.txt",
 		"FileHash": "ahash", //could be empty string when Type=0 //only for type 1,2
-		"IP": "1.1.1.1", //the sender CDN's IP address 
-		"Lat": 23.00, //the sender CDN's location
-		"Lng": 148.12,
+		"CdnId": 1
 		"TimeStamp": 12312312312 //optional for now
 	}
 
@@ -74,32 +72,24 @@ void MetaCDNReceiver::handle_update(http_request message) {
 	try {
 		if(message.headers().content_type()==U("application/json")) {
 			json::value jsonObj = message.extract_json().get();
-			string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
-			//TODO: validate ip address
-			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
+			int cdnId = jsonObj.at(U("CdnId")).as_integer();
 			string fileName = utility::conversions::to_utf8string(jsonObj.at(U("FileName")).as_string());
 			
 			int result;
 			if(jsonObj.at(U("Type")).as_integer() == 0) {
-				//add cdn to the meta entry
-				//file hash is not needed here
 				result = m_meta->addCdnToMetaEntry(fileName, cdnAddr);
 			} else if(jsonObj.at(U("Type")).as_integer() == 1) {
-				//renew the meta entry
 				string fileHash = utility::conversions::to_utf8string(jsonObj.at(U("FileHash")).as_string());
-				//TODO: validate file hash
-				vector<Address> newCdnList;
-				newCdnList.push_back(cdnAddr);
+				vector<int> newCdnList;
+				newCdnList.push_back(cdnId);
 				result = m_meta->updateMetaEntry(fileName, fileHash, newCdnList);
 				//if(result == 0)
 				//	result = m_meta->updateTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_integer());
 				//TODO : now send requests to rest of CDNS to invalidate !!
 			} else if(jsonObj.at(U("Type")).as_integer() == 2) {
-				//add a new meta entry
 				string fileHash = utility::conversions::to_utf8string(jsonObj.at(U("FileHash")).as_string());
-				//TODO: validate file hash
-				vector<Address> newCdnList;
-				newCdnList.push_back(cdnAddr);
+				vector<int> newCdnList;
+				newCdnList.push_back(cdnId);
 				result = m_meta->addNewMetaEntry(fileName, fileHash, newCdnList);
 				//if(result == 0)
 				//	result = m_meta->addNewTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_integer());
@@ -116,7 +106,6 @@ void MetaCDNReceiver::handle_update(http_request message) {
 		message.reply(status_codes::Forbidden, U("Invalid json object"));
 		return;
 	}
-	return;
 }
 
 void MetaCDNReceiver::handle_delete(http_request message) {
@@ -128,9 +117,7 @@ void MetaCDNReceiver::handle_delete(http_request message) {
 	Request
 	{
 		"FileName": "a.txt",
-		"IP": "1.1.1.1", //the sender CDN's IP address
-		"Lat": 23.00, //the sender CDN's location
-		"Lng": 148.12
+		"CdnId" : 2
 	}
 
 	Response: status OK or Forbidden (no json object included)
@@ -139,11 +126,9 @@ void MetaCDNReceiver::handle_delete(http_request message) {
 		int result;
 		if(message.headers().content_type()==U("application/json")) {
 			json::value jsonObj = message.extract_json().get();
-			string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
-			//TODO: validate ip address
-			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
+			int cdnId = jsonObj.at(U("CdnId")).as_integer();
 			string fileName = utility::conversions::to_utf8string(jsonObj.at(U("FileName")).as_string());
-			result = m_meta->deleteCdnFromMetaEntry(fileName, cdnAddr);
+			result = m_meta->deleteCdnFromMetaEntry(fileName, cdnId);
 			message.reply(result==0? status_codes::OK : status_codes::NotFound, result==0? U("Deleted successfully") : U("Delete failed"));
 		} else {
 			message.reply(status_codes::Forbidden, U("Json object is required"));
@@ -152,7 +137,6 @@ void MetaCDNReceiver::handle_delete(http_request message) {
 		message.reply(status_codes::Forbidden, U("Invalid json object"));
 		return;
 	}
-	return;
 }
 
 void MetaCDNReceiver::handle_register(http_request message) {
@@ -169,7 +153,7 @@ void MetaCDNReceiver::handle_register(http_request message) {
 	}
 	Response
 	{
-		"ID": 1 //the assigned id for the cdn
+		"CdnId": 1 //the assigned id for the cdn
 	}
 
 	*/
@@ -180,9 +164,9 @@ void MetaCDNReceiver::handle_register(http_request message) {
 			string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
 			//TODO: validate ip address
 			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
-			assignedId = m_meta->addCdnAddr(cdnAddr);
+			assignedId = m_meta->registerCdn(cdnAddr);
 			json::value respFinal = json::value::object();
-			respFinal[U("ID")] = json::value::number(assignedId);
+			respFinal[U("CdnId")] = json::value::number(assignedId);
 			message.reply(assignedId!=-1? status_codes::OK : status_codes::NotFound, respFinal);
 		} else {
 			message.reply(status_codes::Forbidden, U("Json object is required"));
@@ -191,5 +175,4 @@ void MetaCDNReceiver::handle_register(http_request message) {
 		message.reply(status_codes::Forbidden, U("Invalid json object"));
 		return;
 	}
-	return;
 }
