@@ -27,7 +27,8 @@ string ipToLatLng::exec( const char* cmd ) {
 
 // function to convert ip address to latitude and longitude
 void ip_to_latlng( string ip_addr ) {
-    // use myipaddr obtained above
+    // use myipaddr obtained above and use GET api in order to get your geographic location
+
 
 
 
