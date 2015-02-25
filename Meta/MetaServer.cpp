@@ -466,10 +466,10 @@ int MetaServer::deleteCdnFromMetaEntry(string fileName, Address cdnAddr) {
 
 	fileIn.close();
 	fileOut.close();
-	if(cdnFound==false)
-		cout<<"MetaServer::deleteCdnFromMetaEntry - "+cdnAddr.ipAddr+" does not contain "+fileName<<endl;
 	if(fileFound==false)
 		cout<<"MetaServer::deleteCdnFromMetaEntry - "+fileName+" is not found for delete CDN operation"<<endl;
+	else if(cdnFound==false)
+		cout<<"MetaServer::deleteCdnFromMetaEntry - "+cdnAddr.ipAddr+" does not contain "+fileName<<endl;	
 	if(cdnFound==false || fileFound==false)
 		return -1;
 	return 0;
