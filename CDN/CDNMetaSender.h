@@ -1,14 +1,14 @@
 #ifndef CDN_META_RECEIVER_H
 #define CDN_META_RECEIVER_H
 
-#include "cpprest/http_listener.h"
+#include "cpprest/http_client.h"
 #include <string>
 
 using namespace std;
 using namespace web;
 using namespace http;
 using namespace utility;
-using namespace http::experimental::listener;
+using namespace http::client;
 
 struct Address {
 	pair<double, double> latLng; //always keep 2 decimal digits for latitude and longitude
@@ -27,7 +27,7 @@ typedef struct Address Address;
 
 class CDNMetaSender {
 public:
-	CDNMetaReceiver(string metaIpAddr);
+	CDNMetaSender(string metaIpAddr);
 	int sendCacheUpdateMsg(string fileName, Address cdnAddr); //when cdn pulls a file from FSS and stores it into its cache
 	int sendFileUpdateMsg(string fileName, string fileHash, Address cdnAddr); //when cdn updates an existing file
 	int sendNewFileMsg(string fileName, string fileHash, Address cdnAddr); //when cdn receives a new file from client to store

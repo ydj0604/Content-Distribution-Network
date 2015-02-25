@@ -38,13 +38,6 @@ void CDNMetaReceiver::handle_delete(http_request message) {
 	/*
 	-when a file is updated, Meta sends messages to CDNs to invalidate/delete the outdated files
 
-	JSON Format
-	Request
-	{
-		"FileName": "a.txt"
-	}
-
-
 	try {
 		int assignedId = -1;
 		if(message.headers().content_type()==U("application/json")) {
