@@ -13,18 +13,23 @@ using namespace json;
 
 OriginClientReceiver* OriginClientReceiver::m_instance = NULL;
 
-OriginClientReceiver::OriginClientReceiver(utility::string_t url) : m_listener(url) {
-	m_listener.support(methods::POST, std::bind(&OriginClientReceiver::handle_post, this, std::placeholders::_1));
+OriginClientReceiver::OriginClientReceiver(utility::string_t url_explicit, utility::string_t url_sync) : m_listener_explicit(url_explicit), m_listener_sync(url_sync) {
+	m_listener_explicit.support(methods::POST, std::bind(&OriginClientReceiver::handle_explicit, this, std::placeholders::_1));
+	m_listener_sync.support(methods::POST, std::bind(&OriginClientReceiver::handle_sync, this, std::placeholders::_1));
 }
 
 void OriginClientReceiver::initialize(const string_t& address, OriginServer* origin) {
 	OriginClientReceiver* instance = OriginClientReceiver::getInstance();
-	uri_builder uri(address);
-	uri.append_path(U("origin/sync"));
-	instance = new OriginClientReceiver(uri.to_uri().to_string());
+	uri_builder uri_explicit(address);
+	uri_explicit.append_path(U("origin/explicit"));
+	uri_builder uri_sync(address);
+	uri_sync.append_path(U("origin/sync"));
+	instance = new OriginClientReceiver(uri_explicit.to_uri().to_string(), uri_sync.to_uri().to_string());
 	instance->setOrigin(origin);
-	instance->open().wait();
-	ucout << utility::string_t(U("OriginClientReceiver is listening for client requests at: ")) << uri.to_uri().to_string() << std::endl;
+	instance->open_explicit().wait();
+	instance->open_sync().wait();
+	ucout << utility::string_t(U("OriginClientReceiver is listening for client up/down requests at: ")) << uri_explicit.to_uri().to_string() << std::endl;
+	ucout << utility::string_t(U("OriginClientReceiver is listening for client sync requests at: ")) << uri_sync.to_uri().to_string() << std::endl;
 	return;
 }
 
@@ -32,12 +37,33 @@ void OriginClientReceiver::shutDown() {
 	OriginClientReceiver* instance = OriginClientReceiver::getInstance();
 	if(instance==NULL)
 		return;
-	instance->close().wait();
+	instance->close_explicit().wait();
+	instance->close_sync().wait();
 	delete instance;
 	return;
 }
 
-void OriginClientReceiver::handle_post(http_request message) {
+void OriginClientReceiver::handle_sync(http_request message) {
+	/* JSON Format
+	Request
+	{
+		"FileList": [{"Name": "a.txt" ,"Hash": "ahash", "TimeStamp": 123123}, {"Name": "b.txt" ,"Hash": "bhash", "TimeStamp": 123123}], //list of client's local files and hashes and time stamps
+		"IP": "1.1.1.1", //the sender client's ip address
+		"Lat": 23.00, //the sender client's location
+		"Lng": 148.12
+	}
+
+	Response
+	{
+		"FileList": [{"Name": "a.txt" ,"Address": "1.1.1.1", "Type": "UPLOAD"}, {"Name": "b.txt" ,"Address": "2.2.2.2", "Type": "DOWNLOAD"}]
+	}
+
+	Type: UPLOAD(client needs to upload the file), DOWNLOAD(client needs to download), DELETE(cleint needs to delete the file)
+	*/
+	message.reply(status_codes::OK, U("Hello World"));
+}
+
+void OriginClientReceiver::handle_explicit(http_request message) {
 	/* JSON Format
 	Request
 	{

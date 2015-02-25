@@ -39,3 +39,8 @@ vector< pair<string, Address> > OriginServer::getListOfFilesUpload(const vector<
 	vector< pair<string, Address> > result = m_meta->processListFromOriginUpload(listFromClientApp, clientAddr);
 	return result;
 }
+
+int OriginServer::getListForSync(const vector< pair<string, long long> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList, vector<string>& deleteList) {
+	int result = m_meta->processSyncWithTimeStamp(clientFileList, uploadList, downloadList, deleteList);
+	return result;
+}

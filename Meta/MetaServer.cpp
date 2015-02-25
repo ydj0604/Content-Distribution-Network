@@ -31,7 +31,9 @@ MetaServer::MetaServer(string file, OriginServer* origin) {
 	string dirName = "./MetaData";
 	mkdir(dirName.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	m_file = "./MetaData/"+file;
+	m_file_timestamp = "./MetaData/"+file+"_timestamp";
 	m_version = 0;
+	m_version_timestamp = 0;
 	m_origin = origin;
 	m_nextCDNId = 0;
 }
@@ -334,7 +336,31 @@ string constructLine(string fileName, const string& fileHash, const vector<Addre
 	return result;
 }
 
+bool MetaServer::doesExist(string fileName) {
+	string currFileName = m_file+"_v" + char('0'+m_version);
+	ifstream fileIn(currFileName.c_str());
+	if(!fileIn.is_open()) {
+		cout<<"MetaServer::doesExist - file not opened"<<endl;
+		return false;
+	}
+	bool found = false;
+	string currLine;
+	while(getline(fileIn, currLine)) {
+		if(currLine.substr(0, fileName.size())==fileName && currLine[fileName.size()]==' ') {
+			found = true;
+			break;
+		}
+	}
+
+	fileIn.close();
+	return found;
+}
+
 int MetaServer::addNewMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList) {
+	if(doesExist(fileName)) {
+		cout<<"MetaServer::addNewMetaEntry - " + fileName + " already exists"<<endl;
+		return -1;
+	}
 	string currFileName = m_file+"_v" + char('0'+m_version);
 	ofstream file(currFileName.c_str(), ios_base::app | ios_base::out);
 	if(!file.is_open()) {
@@ -446,5 +472,119 @@ int MetaServer::deleteCdnFromMetaEntry(string fileName, Address cdnAddr) {
 		cout<<"MetaServer::deleteCdnFromMetaEntry - "+fileName+" is not found for delete CDN operation"<<endl;
 	if(cdnFound==false || fileFound==false)
 		return -1;
+	return 0;
+}
+
+
+/*--------------------------*/
+/* for timestamp management */
+/*--------------------------*/
+
+void MetaServer::updateVersion_timestamp() {
+	m_version_timestamp = (m_version_timestamp+1)%10;
+}
+
+void parseLine_timestamp(string s, string& fileName, long long& timeStamp) {
+	fileName = "";
+	timeStamp = -1;
+	string curr = "";
+	int idx=0;
+	while(idx<s.size() && s[idx]!=' ') {
+		curr += s[idx];
+		++idx;
+	}
+	++idx;
+	fileName = curr;
+	curr = "";
+	while(idx<s.size()) {
+		curr = s[idx];
+		++idx;
+	}
+	timeStamp = stoll(curr);
+}
+
+//only considers files that exist in both client and fss
+int MetaServer::processSyncWithTimeStamp(const vector< pair<string, long long> >& clientFileList, //<file name, file timestamp>
+										 vector<string>& uploadList, vector<string>& downloadList, vector<string>& deleteList) {
+	uploadList.clear();
+	downloadList.clear();
+	deleteList.clear();
+	string currFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
+	ifstream file(currFileName.c_str());
+	if(!file.is_open()) {
+		cout<<"MetaServer::processSyncWithTimeStamp - file not opened"<<endl;
+		return -1;
+	}
+	unordered_map<string, long long> clientNameToTimestampMap;
+	for(int i=0; i<clientFileList.size(); i++)
+		clientNameToTimestampMap[clientFileList[i].first] = clientFileList[i].second;
+	string currLine;
+	while(getline(file, currLine)) {
+		string fileName;
+		long long timeStampFSS;
+		parseLine_timestamp(currLine, fileName, timeStampFSS);
+		if(clientNameToTimestampMap.count(fileName) > 0) {
+			if(clientNameToTimestampMap[fileName] > timeStampFSS) { //client has more recent version; client needs to upload it to fss
+				uploadList.push_back(fileName);
+			} else { //fss has more recent version; client needs to download it from fss
+				downloadList.push_back(fileName);
+			}
+		}
+	}
+	return 0;
+}
+
+int MetaServer::addNewTimeStamp(string fileName, long long timeStamp) {
+	string currFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
+	ofstream file(currFileName.c_str(), ios_base::app | ios_base::out);
+	if(!file.is_open()) {
+		cout<<"MetaServer::addNewTimeStamp - file not opened"<<endl;
+		return -1;
+	}
+	string lineToAdd = fileName + " " + to_string(timeStamp) + "\n";
+	file << lineToAdd;
+	file.close();
+	return 0;
+}
+
+int MetaServer::updateTimeStamp(string fileName, long long timeStamp) {
+	if(deleteTimeStamp(fileName)==-1)
+		return -1;
+	if(addNewTimeStamp(fileName, timeStamp)==-1)
+		return -1;
+	return 0;
+}
+
+int MetaServer::deleteTimeStamp(string fileName) {
+	string currFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
+	updateVersion_timestamp();
+	string newFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
+	ifstream fileIn(currFileName.c_str());
+	if(!fileIn) {
+		cout<<"MetaServer::updateTimeStamp - file not opened"<<endl;
+		return -1;
+	}
+	ofstream fileOut(newFileName.c_str());
+	if(!fileOut) {
+		cout<<"MetaServer::updateTimeStamp - file not opened"<<endl;
+		fileIn.close();
+		return -1;
+	}
+	bool fileFound = false;
+	string currLine;
+	while(getline(fileIn, currLine)) {
+		if(currLine.substr(0, fileName.size())==fileName && currLine[fileName.size()]==' ') {
+			fileFound = true;
+			continue;
+		}
+		fileOut << currLine+"\n";
+	}
+
+	fileIn.close();
+	fileOut.close();
+	if(fileFound==false) {
+		cout<<"MetaServer::deleteTimeStamp - "+fileName+" is not found"<<endl;
+		return -1;
+	}
 	return 0;
 }

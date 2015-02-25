@@ -35,24 +35,36 @@ public:
 	vector<Address> getCdnsThatContainFile(string fileName);
 	bool isCDN_closerThanFSS(Address cdnAddr, Address clientAddr);
 	bool CDN_load_OK(Address cdnAddr);
+
 	vector< pair<string, Address> > processListFromOriginDownload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
 	vector< pair<string, Address> > processListFromOriginUpload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
 
 	//functions for communication with CDN
+	bool doesExist(string fileName);
 	int deleteMetaEntry(string fileName);
 	int addNewMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
 	int updateMetaEntry(string fileName, const string& fileHash, const vector<Address>& CdnAddrList);
 	int addCdnToMetaEntry(string fileName, Address cdnAddr);
 	int deleteCdnFromMetaEntry(string fileName, Address cdnAddr);
 
+	//functions for timestamp management
+	int processSyncWithTimeStamp(const vector< pair<string, long long> >& clientFileList,
+								 vector<string>& uploadList, vector<string>& downloadList, vector<string>& deleteList);
+	int updateTimeStamp(string fileName, long long timeStamp);
+	int addNewTimeStamp(string fileName, long long timeStamp);
+	int deleteTimeStamp(string fileName);
+
 private:
 	void updateVersion();
+	void updateVersion_timestamp();
 	string m_file; //currently MetaServer writes everyghing to one file; we can improve the performance later (by indexing...etc)
+	string m_file_timestamp;
 	int m_version;
+	int m_version_timestamp;
 	int m_nextCDNId;
 	vector<Address> m_cdnAddrList;
 	Address m_FssAddr;
-	OriginServer* m_origin;				// communicating point to and from OriginServer
+	OriginServer* m_origin; //communicating point to and from OriginServer
 };
 
 #endif

@@ -3,6 +3,7 @@
 #include <iostream>
 #include "MetaServer.h"
 #include "../Shared.h"
+#include <string>
 
 using namespace std;
 using namespace web;
@@ -63,7 +64,8 @@ void MetaCDNReceiver::handle_update(http_request message) {
 		"FileHash": "ahash", //could be empty string when Type=0
 		"IP": "1.1.1.1", //the sender CDN's IP address
 		"Lat": 23.00, //the sender CDN's location
-		"Lng": 148.12
+		"Lng": 148.12,
+		"TimeStamp": 12312312312
 	}
 
 	Response: status OK or Forbidden (no json object included)
@@ -88,6 +90,8 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				vector<Address> newCdnList;
 				newCdnList.push_back(cdnAddr);
 				result = m_meta->updateMetaEntry(fileName, fileHash, newCdnList);
+				//if(result == 0)
+				//	result = m_meta->updateTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_integer());
 				//TODO : now send requests to rest of CDNS to invalidate !!
 			} else if(jsonObj.at(U("Type")).as_integer() == 2) {
 				//add a new meta entry
@@ -95,6 +99,8 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				vector<Address> newCdnList;
 				newCdnList.push_back(cdnAddr);
 				result = m_meta->addNewMetaEntry(fileName, fileHash, newCdnList);
+				//if(result == 0)
+				//	result = m_meta->addNewTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_integer());
 			} else {
 				message.reply(status_codes::Forbidden, U("Undefined Type"));
 				return;

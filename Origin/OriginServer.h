@@ -20,6 +20,7 @@ public:
 	void endListening();
 	vector< pair<string, Address> > getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr);
 	vector< pair<string, Address> > getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr);
+	int getListForSync(const vector< pair<string, long long> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList, vector<string>& deleteList);
 
 private:
 	MetaServer* m_meta;
