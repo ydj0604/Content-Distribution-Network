@@ -61,11 +61,11 @@ void MetaCDNReceiver::handle_update(http_request message) {
 	{
 		"Type": 0, // 0=CDN pulls a file from FSS, 1=CDN updates a file (+invalidation process), 2=CDN creates a new file and stores in FSS
 		"FileName": "a.txt",
-		"FileHash": "ahash", //could be empty string when Type=0
-		"IP": "1.1.1.1", //the sender CDN's IP address
+		"FileHash": "ahash", //could be empty string when Type=0 //only for type 1,2
+		"IP": "1.1.1.1", //the sender CDN's IP address 
 		"Lat": 23.00, //the sender CDN's location
 		"Lng": 148.12,
-		"TimeStamp": 12312312312
+		"TimeStamp": 12312312312 //optional for now
 	}
 
 	Response: status OK or Forbidden (no json object included)
@@ -78,7 +78,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 			//TODO: validate ip address
 			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
 			string fileName = utility::conversions::to_utf8string(jsonObj.at(U("FileName")).as_string());
-			string fileHash = utility::conversions::to_utf8string(jsonObj.at(U("FileHash")).as_string());
+			
 			int result;
 			if(jsonObj.at(U("Type")).as_integer() == 0) {
 				//add cdn to the meta entry
@@ -86,6 +86,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				result = m_meta->addCdnToMetaEntry(fileName, cdnAddr);
 			} else if(jsonObj.at(U("Type")).as_integer() == 1) {
 				//renew the meta entry
+				string fileHash = utility::conversions::to_utf8string(jsonObj.at(U("FileHash")).as_string());
 				//TODO: validate file hash
 				vector<Address> newCdnList;
 				newCdnList.push_back(cdnAddr);
@@ -95,6 +96,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				//TODO : now send requests to rest of CDNS to invalidate !!
 			} else if(jsonObj.at(U("Type")).as_integer() == 2) {
 				//add a new meta entry
+				string fileHash = utility::conversions::to_utf8string(jsonObj.at(U("FileHash")).as_string());
 				//TODO: validate file hash
 				vector<Address> newCdnList;
 				newCdnList.push_back(cdnAddr);
