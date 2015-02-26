@@ -78,6 +78,7 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
                         //remove the file
                         if(remove(path_maker(cstr)) == 0) {
                             cout << "deletion successful" << endl;
+                            return true;
                         }
                     }
 				}

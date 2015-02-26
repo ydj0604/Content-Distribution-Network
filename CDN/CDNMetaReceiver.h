@@ -14,7 +14,7 @@ class CDNMetaReceiver {
 public:
 	CDNMetaReceiver(utility::string_t url);
 	void setCDN(CDN_Node* cdn) { m_cdn = cdn; }
-	static void initialize(const string_t& address, CDN_Node* meta);
+	static void initialize(const string_t& address, CDN_Node* cdn);
 	static void shutDown();
 	static CDNMetaReceiver* getInstance() { return m_instance; }
     pplx::task<void> open() { return m_listener.open(); }

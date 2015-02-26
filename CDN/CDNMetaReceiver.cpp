@@ -23,7 +23,7 @@ void CDNMetaReceiver::initialize(const string_t& address, CDN_Node* cdn) {
 	instance = new CDNMetaReceiver(uri.to_uri().to_string());
 	instance->setCDN(cdn);
 	instance->open().wait();
-	ucout << utility::string_t(U("CDNMetaReceiver is listening for invalidate requests at: ")) << uri.to_uri().to_string() << std::endl;
+	ucout << utility::string_t(U("CDNReceiver is listening for requests at: ")) << uri.to_uri().to_string() << std::endl;
 }
 
 void CDNMetaReceiver::shutDown() {
@@ -35,32 +35,21 @@ void CDNMetaReceiver::shutDown() {
 }
 
 void CDNMetaReceiver::handle_delete(http_request message) {
-	/*
-	-when a file is updated, Meta sends messages to CDNs to invalidate/delete the outdated files
+	auto paths = uri::split_path(uri::decode(message.relative_uri().path()));
+	string filePath = "";
+	for(int i=0; i<paths.size(); i++) {
+		if(i==paths.size()-1)
+			filePath += paths[i];
+		else
+			filePath += paths[i]+"/";
+	}
 
-	try {
-		int assignedId = -1;
-		if(message.headers().content_type()==U("application/json")) {
-			json::value jsonObj = message.extract_json().get();
-			string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
-			//TODO: validate ip address
-			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
-			assignedId = m_meta->addCdnAddr(cdnAddr);
-			json::value respFinal = json::value::object();
-			respFinal[U("ID")] = json::value::number(assignedId);
-			message.reply(assignedId!=-1? status_codes::OK : status_codes::NotFound, respFinal);
-		} else {
-			message.reply(status_codes::Forbidden, U("Json object is required"));
-		}
-	} catch(json::json_exception &e) {
-		message.reply(status_codes::Forbidden, U("Invalid json object"));
+	if(m_cdn==NULL) {
+		message.reply(status_codes::NOT_FOUND, U("CDN server is not set"));
 		return;
 	}
-	*/
-	ucout <<  message.to_string() << endl;
-	auto paths = uri::split_path(uri::decode(message.relative_uri().path()));
-	for(int i=0; i<paths.size(); i++)
-		ucout <<  paths[i] << endl;
-	//TODO: delete the file which can be located/identified by paths
-	message.reply(status_codes::OK, U("testing"));
+	if(m_cdn->look_up_and_remove_storage(filePath ,1)) //remove the file
+		message.reply(status_codes::OK, U("delete succeeded"));
+	else
+		message.reply(status_codes::NOT_FOUND, U(filePath + " is not found"));
 }
