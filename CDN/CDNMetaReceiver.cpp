@@ -45,11 +45,11 @@ void CDNMetaReceiver::handle_delete(http_request message) {
 	}
 
 	if(m_cdn==NULL) {
-		message.reply(status_codes::NOT_FOUND, U("CDN server is not set"));
+		message.reply(status_codes::NotFound, U("CDN server is not set"));
 		return;
 	}
 	if(m_cdn->look_up_and_remove_storage(filePath ,1)) //remove the file
 		message.reply(status_codes::OK, U("delete succeeded"));
 	else
-		message.reply(status_codes::NOT_FOUND, U(filePath + " is not found"));
+		message.reply(status_codes::NotFound, U(filePath + " is not found"));
 }
