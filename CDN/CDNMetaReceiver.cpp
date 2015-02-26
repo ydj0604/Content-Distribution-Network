@@ -23,7 +23,7 @@ void CDNMetaReceiver::initialize(const string_t& address, CDN_Node* cdn) {
 	instance = new CDNMetaReceiver(uri.to_uri().to_string());
 	instance->setCDN(cdn);
 	instance->open().wait();
-	ucout << utility::string_t(U("CDNReceiver is listening for requests at: ")) << uri.to_uri().to_string() << std::endl;
+	ucout << utility::string_t(U("CDNMetaReceiver is listening for requests at: ")) << uri.to_uri().to_string() << std::endl;
 }
 
 void CDNMetaReceiver::shutDown() {
@@ -48,8 +48,8 @@ void CDNMetaReceiver::handle_delete(http_request message) {
 		message.reply(status_codes::NotFound, U("CDN server is not set"));
 		return;
 	}
-	if(m_cdn->look_up_and_remove_storage(filePath ,1)) //remove the file
-		message.reply(status_codes::OK, U("delete succeeded"));
-	else
+	//if(m_cdn->look_up_and_remove_storage(filePath ,1)) //remove the file
+	//	message.reply(status_codes::OK, U("delete succeeded"));
+	//else
 		message.reply(status_codes::NotFound, U(filePath + " is not found"));
 }
