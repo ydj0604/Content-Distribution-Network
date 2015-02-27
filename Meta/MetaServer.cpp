@@ -211,13 +211,13 @@ vector< pair<string, Address> > MetaServer::processListFromOriginDownload(const 
 			result.push_back(make_pair(fileName, m_cdnIdToAddrMap[candidateCdnId]));
 		} else {
 			vector<int> allCdnIdList;
-			unordered_map<int, Addr>::iterator itr = m_cdnIdToAddrMap.begin();
+			unordered_map<int, Address>::iterator itr = m_cdnIdToAddrMap.begin();
 			while(itr!=m_cdnIdToAddrMap.end()) {
 				allCdnIdList.push_back(itr->first);
 				++itr;
 			}
-			Address closestCDN = getClosestCDN(allCdnIdList, clientAddr);
-			result.push_back(make_pair(fileName, closestCDN));
+			int closestCDN = getClosestCDN(allCdnIdList, clientAddr);
+			result.push_back(make_pair(fileName, m_cdnIdToAddrMap[closestCDN]));
 		}
 	}
 
@@ -239,7 +239,7 @@ vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const ve
 	}
 
 	vector<int> allCdnIdList;
-	unordered_map<int, Addr>::iterator itr = m_cdnIdToAddrMap.begin();
+	unordered_map<int, Address>::iterator itr = m_cdnIdToAddrMap.begin();
 	while(itr!=m_cdnIdToAddrMap.end()) {
 		allCdnIdList.push_back(itr->first);
 		++itr;
@@ -264,10 +264,10 @@ vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const ve
 	}
 
 	//add the files that client has but FSS doesn't
-	unordered_map<string, string>::iterator itr = clientNameToHashMap.begin();
-	while(itr != clientNameToHashMap.end()) {
-		result.push_back(make_pair(itr->first, m_cdnIdToAddrMap[closestCdnId]));
-		itr++;
+	unordered_map<string, string>::iterator itr2 = clientNameToHashMap.begin();
+	while(itr2 != clientNameToHashMap.end()) {
+		result.push_back(make_pair(itr2->first, m_cdnIdToAddrMap[closestCdnId]));
+		itr2++;
 	}
 
 	return result;
@@ -392,7 +392,7 @@ int MetaServer::addCdnToMetaEntry(string fileName, int cdnId) {
 			bool cdnFound = false;
 			for(int i=0; i<newCdnList.size(); i++) { //check if cdn already exists in the list
 				if(newCdnList[i]==cdnId) { //cdn already exists;
-					cout<<"MetaServer::addCdnToMetaEntry - CDN#"+cdnId+" already exists in the list"<<endl;
+					cout<<"MetaServer::addCdnToMetaEntry - CDN#" + to_string(cdnId) + " already exists in the list"<<endl;
 					cdnFound = true;
 				}
 			}
@@ -454,7 +454,7 @@ int MetaServer::deleteCdnFromMetaEntry(string fileName, int cdnId) {
 	if(fileFound==false)
 		cout<<"MetaServer::deleteCdnFromMetaEntry - "+fileName+" is not found for delete CDN operation"<<endl;
 	else if(cdnFound==false)
-		cout<<"MetaServer::deleteCdnFromMetaEntry - "+cdnAddr.ipAddr+" does not contain "+fileName<<endl;	
+		cout<<"MetaServer::deleteCdnFromMetaEntry - "+m_cdnIdToAddrMap[cdnId].ipAddr+" does not contain "+fileName<<endl;
 	if(cdnFound==false || fileFound==false)
 		return -1;
 	return 0;

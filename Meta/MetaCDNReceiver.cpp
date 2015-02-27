@@ -77,7 +77,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 			
 			int result;
 			if(jsonObj.at(U("Type")).as_integer() == 0) {
-				result = m_meta->addCdnToMetaEntry(fileName, cdnAddr);
+				result = m_meta->addCdnToMetaEntry(fileName, cdnId);
 			} else if(jsonObj.at(U("Type")).as_integer() == 1) {
 				string fileHash = utility::conversions::to_utf8string(jsonObj.at(U("FileHash")).as_string());
 				vector<int> newCdnList;
@@ -146,7 +146,7 @@ void MetaCDNReceiver::handle_register(http_request message) {
 	JSON Format
 	Request
 	{
-		"Type": 0,
+		"Type": 0, //optional for now
 		"IP": "1.1.1.1", //the sender CDN's IP address
 		"Lat": 23.00, //the sender CDN's location
 		"Lng": 148.12
