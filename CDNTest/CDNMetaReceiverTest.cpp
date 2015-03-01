@@ -1,4 +1,4 @@
-#include "../CDN/CDNMetaReceiver.h"
+#include "../CDN/CDNReceiver.h"
 
 using namespace std;
 using namespace web;
@@ -11,7 +11,7 @@ void simpleTest() {
 	utility::string_t address = U("http://localhost:");
 	address.append(port);
 	CDNMetaReceiver::initialize(address, NULL);
-	std::cout << "Press ENTER to stop OriginClientReceiver." << std::endl;
+	std::cout << "Press ENTER to stop CDNReceiver." << std::endl;
 	std::string line;
 	std::getline(std::cin, line);
 	CDNMetaReceiver::shutDown();

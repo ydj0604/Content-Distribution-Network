@@ -7,61 +7,35 @@
 #include <stdio.h>
 #include <utility>
 #include "CDN_Cache.h"
+#include <string>
+#include <sys/stat.h> //for creating directory
+#include <dirent.h> //for reading directory
 
-//for creating directory
-#include <sys/stat.h>
-
-//for reading directory
-#include <dirent.h>
+class CDNSender;
 
 using namespace std;
 
 class CDN_Node {
 public:
     
-	CDN_Node();
+	CDN_Node(string metaIpAddr, string fssIpAddr);
 	~CDN_Node();
     
+	//utility functions
 	bool make_storage();
-
 	bool look_up_and_remove_storage(string filename, int signal);
-
-	bool transfer_file_to_clients(string client_address, string filename);
-    bool transfer_file_from_clients(string client_address, string filename, int filehash, long long filesize);
-    
-    bool get_file_from_FSS (string filename, long long filesize);
-    bool save_file_to_FSS (string filename, int filehash);
-    
-    
-	bool get_file_from_storage (string filename, int filehash);
-    void save_file_to_storage (string filename, long long filesize);
-
-    
-    
     void managing_files(long long file_size);
     long long get_size_of_storage();
     char* path_maker(const char* name);
+
+    //added
+    void startListening();
+    void endListening();
+    CDNSender* getSender() { return m_sender; }
     
-    /* 
-    should implement meta relating functions
-    */
-    
-	
-    
-    //about gps information
+    //gps functions
     void get_and_set_CDN_addr();
     pair <double, double> get_gps_info ();
-    
-    
-    //not yet planned to implement
-    void lock_the_storage();
-    void unlock_the_storage();
-
-
-/*
-To do
-1.let metaserver knows whether the file is update/upload/download
-*/
 
 private:
 
@@ -70,13 +44,19 @@ private:
     
     long long storage_capacity = 10000000; //the capacity is 10MB
 	long CDN_addr;	// CDN's IP address
-    char wd[256];  // use an actual buffer, not a pointer
-	//string file_path; //storage path name
+    char wd[256];  // storage directory path
 
 	long long size_of_storage = 0; //Count the number of files in CDN Nodes
 	//bool is_locked;
     pair <double, double> cdn_gps; //Location info for CDN
     LRUCache file_tracker; //Storing the information of files in the order
+
+    //added
+    int m_cdnId;
+    Address m_address;
+    string m_metaIpAddr;
+    string m_fssIpAddr;
+    CDNSender* m_sender;
 	
 };
 

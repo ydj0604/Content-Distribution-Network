@@ -1,6 +1,9 @@
 #include "CDN_Node.h"
+#include "CDNReceiver.h"
+#include "CDNSender.h"
 #include "csv.h" //use CSV parser
 #include "CDN_Cache.h"
+#include "Shared.h"
 #include <string>
 #include <stdio.h>
 #include <dirent.h>
@@ -15,17 +18,12 @@
 using namespace std;
 
 
-CDN_Node::CDN_Node() {
-    
-    //initialize all variables and objects
-		//is_locked = false;
-
+CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
     //creating file directory
-        make_storage();
-    
     //set the external IpAddress and convert into number for location
     //get_and_set_CDN_addr();
     
+	/*
     file_tracker.set("IMG_0428.JPG", 1500000);
     file_tracker.set("IMG_0429.JPG", 1400000);
     file_tracker.set("IMG_0433.JPG", 1800000);
@@ -33,18 +31,23 @@ CDN_Node::CDN_Node() {
     file_tracker.set("IMG_0496.JPG", 1500000);
     file_tracker.set("IMG_0620.JPG", 1600000);
     file_tracker.set("IMG_0629.JPG", 1800000);
+    */
 
+	make_storage();
+	m_metaIpAddr = metaIpAddr;
+	m_fssIpAddr = fssIpAddr;
+	m_sender = new CDNSender(metaIpAddr, fssIpAddr);
+	//TODO: initialize m_address
+	while(m_sender->sendRegisterMsg(m_address, m_cdnId)!=0) {} //send register msg to meta to retrieve an id unitl it succeeds
 }
 
 CDN_Node::~CDN_Node() {
-		//clear out all components of CDN Node
+	delete m_sender;
 }
 
 bool CDN_Node::make_storage() {
 		/* creating the file directory*/
         //getcwd( wd, 256 );  // give that buffer to getcwd and tell it how big the buffer is.
-
-        
         /*
 		// if you want to put that data in a string...
 		string cwd = wd;  // like "long double main" suggested
@@ -53,23 +56,22 @@ bool CDN_Node::make_storage() {
 		file_path = cwd;
 		file_path.append("/cdn_node");
         */
-        
+
+		/* ORIGINAL
         strcpy(wd, "/Users/wonjaelee/Desktop");
         strcat(wd, "/cdn_node");
-        //strcpy(wd, "./cdn_node");
-    
-    
-		//making new directory
-		mkdir(wd,7777);
-    
-        //cout << wd << endl;
 
-		//if there is no error, return true
-		return true;
+		mkdir(wd,7777);
+		*/
+    
+	strcpy(wd, CDN_DIR);
+	mkdir(wd, 7777);
+	return true;
 
 }
 
 
+//TODO: take relative file path instead of file name as the first argument !!
 bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 		/*
 			Given filename, and signal is 0, look up the storage of Node and return true if there is match.
@@ -108,69 +110,15 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 }
 
 
-
-bool CDN_Node::transfer_file_to_clients(string client_address, string filename) {
-		/*
-			When Origin Server request the transfer the certain file to Clients, sending it to client_address directly.
-		*/
-        file_tracker.get(filename);
-        return true;
-}
-
-bool CDN_Node::transfer_file_from_clients(string client_address, string filename, int filehash, long long filesize){
-    
-    file_tracker.set(filename, filesize);
-    return true;
-}
-
-bool CDN_Node::get_file_from_FSS (string filename, long long filesize){
-		
-		/*
-			Get the file from FSS and send to client. Then, save it to the Cache if possible.
-		*/
-        file_tracker.set(filename, filesize);
-        return true;
-}
-
-bool CDN_Node::save_file_to_FSS (string filename, int filehash){
-		
-			/* 
-				Get the file from storage and send to FSS.
-			*/
-        return true;
-}
-
-
-bool CDN_Node::get_file_from_storage (string filename, int filehash){
-    
-    /*
-     If the file can be get from the storage, dispatch it and return the file.
-     */
-    return true;
-}
-
-void CDN_Node::save_file_to_storage (string filename, long long filesize){
-    
-    //To Do
-    //get the file and save it into the directory
-    
-    
-    
-    //store the file information to filetracker
-    file_tracker.set(filename, filesize);
-    return;
-}
-
-
 /*
  Whenever we try to save the file into Directory, CDN takes the new file size and compare it whether
  the file size fits to the capacity or not. If it exceeds the limit, this function remove least used
  files until it satisfy the condition.
  */
 void CDN_Node::managing_files(long long file_size) {
-		/*
-			Manage the file storage to maintain its free-capacity.
-		*/
+	/*
+		Manage the file storage to maintain its free-capacity.
+	*/
     while((this->get_size_of_storage() + file_size) > storage_capacity) {
         cout << "current capacity: " << this->get_size_of_storage() << endl;
         string file_name = file_tracker.remove();
@@ -181,9 +129,6 @@ void CDN_Node::managing_files(long long file_size) {
     
 }
 
-/*
- Get the size of the directory
-*/
 long long CDN_Node::get_size_of_storage() {
     size_of_storage = 0;
     struct stat sb;
@@ -202,19 +147,20 @@ long long CDN_Node::get_size_of_storage() {
         return size_of_storage;
 }
 
-
-/*
- Build the path c_string
- */
 char* CDN_Node::path_maker(const char* name){
     char path_file[256];
     strcpy(path_file, wd);
     strcat(path_file, "/");
-    
     return strcat(path_file, name);
-
 }
 
+void CDN_Node::startListening(){
+	CDNReceiver::initialize(U(CDN_ADDR), this);
+}
+
+void CDN_Node::endListening(){
+	CDNReceiver::shutDown();
+}
 
 /*
  Before get the gps information, we have to convert IP address into some certain numbers that fit into
@@ -322,15 +268,6 @@ pair <double, double> CDN_Node::get_gps_info (){
 }
 
 
-/*
-	void CDN_Node::lock_the_storage(){
-		is_locked = true;
-	}
-
-	void CDN_Node::unlock_the_storage(){
-		is_locked = false;
-	}
-*/
 
 
 

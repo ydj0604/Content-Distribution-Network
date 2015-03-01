@@ -34,7 +34,6 @@ void sendGetRequest(string fileName) {
 	auto fstream = OPENSTR_W<uint8_t>(U(fileName)).get();
 	http_request msg(methods::POST);
     msg.set_response_stream(fstream);
-    //fstream.close(std::make_exception_ptr(std::exception())).wait();
     http_response resp = client.request(msg).get();
     resp.content_ready().get();
 }

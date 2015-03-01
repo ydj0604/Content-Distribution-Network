@@ -1,4 +1,4 @@
-#include "../CDN/CDNMetaSender.h"
+#include "../CDN/CDNSender.h"
 #include "cpprest/http_client.h"
 
 using namespace std;

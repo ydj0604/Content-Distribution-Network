@@ -6,57 +6,16 @@
 using namespace std;
 
 class LRUCache{
-   
-private:
-    typedef struct Node {
-        string key;
-        long long val;
-        Node* next;
-        Node* prev;
-        Node(string k, long long v) {
-            key = k;
-            val = v;
-            next = NULL;
-            prev = NULL;
-        }
-    } Node;
-    
-    void update(Node* node) {
-        if(head==node)
-            return;
-        if(node->prev) {
-            node->prev->next = node->next;
-        }
-        if(node->next) {
-            node->next->prev = node->prev;
-        }
-        if(node==tail) {
-            tail = tail->prev;
-            tail->next = NULL;
-        }
-        node->next = head;
-        node->prev = NULL;
-        head->prev = node;
-        head = node;
-    }
-    unordered_map<string, Node*> keyToNodeMap;
-    Node* head;
-    Node* tail;
-
 public:
     LRUCache() {
-
         head = NULL;
         tail = NULL;
     }
     
     void get(string key) {
-        
         Node *node = keyToNodeMap[key];
         update(node);
     }
-    
-    
     
     void set(string key, long long value) {
         if(keyToNodeMap.count(key) == 0) {
@@ -79,7 +38,6 @@ public:
     }
     
     string remove() {
-        
             keyToNodeMap.erase(tail->key);
             Node* tempTail = tail;
             string filename = tail->key;
@@ -88,7 +46,6 @@ public:
             tail->next = NULL;
             cout << "new last filename is: " << tail->key << endl;
             delete tempTail;
-        
             return filename;
     }
     
@@ -106,7 +63,42 @@ public:
             ++i;
         }
     }
-    
+
+private:
+    typedef struct Node {
+        string key;
+        long long val;
+        Node* next;
+        Node* prev;
+        Node(string k, long long v) {
+            key = k;
+            val = v;
+            next = NULL;
+            prev = NULL;
+        }
+    } Node;
+
+    void update(Node* node) {
+        if(head==node)
+            return;
+        if(node->prev) {
+            node->prev->next = node->next;
+        }
+        if(node->next) {
+            node->next->prev = node->prev;
+        }
+        if(node==tail) {
+            tail = tail->prev;
+            tail->next = NULL;
+        }
+        node->next = head;
+        node->prev = NULL;
+        head->prev = node;
+        head = node;
+    }
+    unordered_map<string, Node*> keyToNodeMap;
+    Node* head;
+    Node* tail;
 };
 
 #endif
