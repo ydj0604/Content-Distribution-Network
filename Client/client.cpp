@@ -91,7 +91,7 @@ vector<FileInfo> Client::getListOfFilesFromDirectory() {
       continue;
 
     // Convert to string object and add to return vector
-    FileInfo f = newFileInfo(ent->d_name, hashFile(ent->d_name));
+    FileInfo f = newFileInfo(ent->d_name, hashFile(baseDir+ent->d_name));
     files.push_back(f);
   }
 
