@@ -38,13 +38,17 @@ public:
     }
     
     string remove(vector<string>& deletedfiles) {
+    		if(tail==NULL)
+    			return "";
             keyToNodeMap.erase(tail->key);
             Node* tempTail = tail;
             string filename = tail->key;
-            cout << "removed filename is: " << filename << endl;
+            cout << "LRUCache: removed filename is: " << filename << endl;
             tail = tail->prev;
-            tail->next = NULL;
-            //cout << "new last filename is: " << tail->key << endl;
+            if(tail)
+            	tail->next = NULL;
+            else
+            	head = NULL;
             if(tempTail)
             	delete tempTail;
             deletedfiles.push_back(filename);
@@ -52,6 +56,21 @@ public:
     }
     
     void remove(string key) {
+        if(keyToNodeMap.count(key) > 0) {
+        	Node* nodeToRemove = keyToNodeMap[key];
+        	if(nodeToRemove->prev)
+        		nodeToRemove->prev->next = nodeToRemove->next;
+        	if(nodeToRemove->next)
+        		nodeToRemove->next->prev = nodeToRemove->prev;
+        	if(nodeToRemove == head)
+        		head = nodeToRemove->next;
+        	if(nodeToRemove == tail)
+        		tail = nodeToRemove->prev;
+        	keyToNodeMap.erase(key);
+        	delete nodeToRemove;
+        }
+
+        /*
         unordered_map<string, Node*>::iterator i = keyToNodeMap.begin();
         while(i != keyToNodeMap.end()){
             if(i->first == key) {
@@ -64,6 +83,7 @@ public:
             }
             ++i;
         }
+        */
     }
 
 private:

@@ -102,12 +102,12 @@ int CDNSender::getFileFromFSS(string fileName, int cdnId) {
 		return -1;
 	string contents = resp.extract_string().get();
 	vector<string> deletedFiles;
-	if(m_cdn->write_file(contents, fileName, deletedFiles))
+	if(!m_cdn->write_file(contents, fileName, deletedFiles))
 		return -2;
 	for(int i=0; i<deletedFiles.size(); i++) {
-		sendCacheDeleteMsgToMeta(deletedFiles[i], cdnId);
+		//sendCacheDeleteMsgToMeta(deletedFiles[i], cdnId);
 	}
-	sendCacheUpdateMsgToMeta(fileName, cdnId);
+	//sendCacheUpdateMsgToMeta(fileName, cdnId);
 	return 0;
 }
 

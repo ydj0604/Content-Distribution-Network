@@ -23,9 +23,8 @@ CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
 	m_metaIpAddr = metaIpAddr;
 	m_fssIpAddr = fssIpAddr;
 	m_sender = new CDNSender(metaIpAddr, fssIpAddr);
-    
-	//TODO: initialize m_address
-    get_address();
+	m_sender->setCDN(this);
+    get_address(); // initialize cdn address
     m_cdnId = -1;
     //m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
 }
@@ -43,14 +42,13 @@ bool CDN_Node::make_storage() {
 void CDN_Node::get_address() {
     
     //set the external IpAddress and convert into number for location
-    get_and_set_CDN_addr();
+    get_and_set_CDN_addr(); //ip address is assigned in get_and_set_CDN_addr()
     
     /* get the gps information and assign them to Address */
     get_gps_info();
     
     m_address.latLng.first = cdn_gps.first;
     m_address.latLng.second = cdn_gps.second;
-    //ip address is assigned in get_and_set_CDN_addr()
 
     cout<<"CDN IpAddr: "<<m_address.ipAddr<<endl;
     cout<<"CDN Lat: "<<m_address.latLng.first<<" ";
@@ -65,7 +63,6 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
             If signal is 1, look up the file and remove it from the directory.
          */
         
-            //convert string to char
             const char* cstr = filename.c_str();
         
 			if((dir = opendir(wd)) != NULL) {
@@ -78,7 +75,7 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
                         char temp[256];
                         strcpy(temp,path_maker(cstr));
                         if(remove(temp) == 0) {
-                            cout << "deletion successful" << endl;
+                            cout << "deleted " + filename << endl;
                             return true;
                         } else {
                             cout << "Can't remove " << cstr << ": " << strerror(errno) << endl;
@@ -87,7 +84,7 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 				}
 				closedir (dir);
 			} else {
-				/* can not open directory */
+				/* can not open  */
 				perror("Can't open the directory");
 				return false;
 			}
@@ -101,7 +98,8 @@ bool CDN_Node::write_file(const string &contents, string filename, vector<string
     long long file_size = contents.size();
     cout << "file size: " << file_size << endl;
     
-    managing_files(filename, file_size, deletedfiles);
+    if(!managing_files(filename, file_size, deletedfiles))
+    	return false;
     
     //convert string to char
     const char* cstr = filename.c_str();
@@ -131,7 +129,6 @@ string CDN_Node::load_file(string filename) {
     if(f.is_open()) {
         //update cache information
         file_tracker.get(filename);
-        
         stringstream buf;
         buf << f.rdbuf();
         return buf.str();
@@ -145,13 +142,16 @@ string CDN_Node::load_file(string filename) {
  the file size fits to the capacity or not. If it exceeds the limit, this function remove least used
  files until it satisfy the condition.
  */
-void CDN_Node::managing_files(string filename,long long file_size, vector<string>& deletedfiles) {
+bool CDN_Node::managing_files(string filename,long long file_size, vector<string>& deletedfiles) {
 	/*
 		Manage the file storage to maintain its free-capacity.
 	*/
+
     while((this->get_size_of_storage() + file_size) > storage_capacity) {
         cout << "current capacity: " << this->get_size_of_storage() << endl;
         string file_name = file_tracker.remove(deletedfiles);
+        if(file_name=="")
+        	return false;
         this->look_up_and_remove_storage(file_name, 1);
     }
     
@@ -159,7 +159,12 @@ void CDN_Node::managing_files(string filename,long long file_size, vector<string
     file_tracker.set(filename, file_size);
     
     cout << "Current storage capacity is: " << this->get_size_of_storage() << endl;
-    
+    return true;
+}
+
+bool CDN_Node::delete_file(string filename){
+	file_tracker.remove(filename);
+	return this->look_up_and_remove_storage(filename,1);
 }
 
 long long CDN_Node::get_size_of_storage() {

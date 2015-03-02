@@ -25,7 +25,7 @@ public:
 	//utility functions
 	bool make_storage();
 	bool look_up_and_remove_storage(string filename, int signal);
-    void managing_files(string filename, long long file_size, vector<string>& deletedfiles);
+    bool managing_files(string filename, long long file_size, vector<string>& deletedfiles);
     long long get_size_of_storage();
     char* path_maker(const char* name);
 
@@ -41,6 +41,7 @@ public:
     int get_cdn_id() {return m_cdnId;}
     bool write_file (const string& contents, string filename,vector<string>& deletedfiles);
     string load_file (string filename);
+    bool delete_file (string filename);
     
     //gps functions
     void get_and_set_CDN_addr();
@@ -51,7 +52,7 @@ private:
     DIR *dir;
     struct dirent *ent;
     
-    long long storage_capacity = 10000000; //the capacity is 10MB
+    long long storage_capacity = 8200; //the capacity is 10MB
 	long CDN_addr;	// CDN's IP address
     char wd[256];  // storage directory path
 

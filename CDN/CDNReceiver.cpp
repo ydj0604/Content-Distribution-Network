@@ -53,7 +53,7 @@ void CDNReceiver::handle_delete(http_request message) {
 		message.reply(status_codes::NotFound, U("CDN server is not set"));
 		return;
 	}
-	if(m_cdn->look_up_and_remove_storage(fileName ,1)) //remove the file
+	if(m_cdn->delete_file(fileName))  //look_up_and_remove_storage(fileName ,1)) //remove the file
 		message.reply(status_codes::OK, U("delete succeeded"));
 	else
 		message.reply(status_codes::NotFound, U(fileName + " is not found in cdn"));
@@ -111,7 +111,7 @@ void CDNReceiver::handle_put(http_request message) {
 	}
 
 	if(sender->uploadFileToFSS(fileName, contents) != 0) {
-		m_cdn->look_up_and_remove_storage(fileName, 1); //roll back
+		m_cdn->delete_file(fileName);
 		message.reply(status_codes::NotFound, "failed to write the file to fss");
 		return;
 	}
