@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string> // for strcmp
+#include <string.h> // for strcmp
 #include "client.h"
 #include "hash.h"
+#include <cstdio> // printf
 using namespace std;
 
 int main(int argc, char *argv[]) {

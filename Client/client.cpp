@@ -2,6 +2,17 @@
 #include <iostream>
 #include "dirent.h" // for file reading
 #include "hash.h"
+#include <cstdio> // for printf
+
+#include <cpprest/http_client.h>
+#include <cpprest/filestream.h>
+using namespace utility;                    // Common utilities like string conversions
+using namespace web;                        // Common features like URIs.
+using namespace web::http;                  // Common HTTP functionality
+using namespace web::http::client;          // HTTP client features
+using namespace concurrency::streams;       // Asynchronous streams
+
+
 using namespace std;
 
 FileInfo newFileInfo(string name, string hash, string cdnAddr) {
@@ -90,7 +101,26 @@ void Client::downloadFile(FileInfo f) {
   // directly download file from cdn
   printf("Downloading file... ");
   printFileInfo(f);
+
   // request file f communication
+  string cdn_address = "http://" + f.cdnAddr + "/";
+  http_client cdn_client = http_client("http://localhost:5000/get");
+  
+  // Make request
+  http_response response;
+  try {
+    response = cdn_client.request(methods::GET, f.name).get();
+  } catch (const std::exception& e) {
+    printf("ERROR when downloading, %s\n", e.what());
+  }
+  
+  if (response.status_code() == status_codes::OK) {
+    printf("OK, saving...\n");
+    cout << response.extract_string().get() << endl;
+  } else {
+    printf("FAILED TO DOWNLOAD\n");
+  }
+
 }
 
 void Client::uploadFile(FileInfo f) {
