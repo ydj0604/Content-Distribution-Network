@@ -3,6 +3,7 @@
 #include "dirent.h" // for file reading
 #include "hash.h"
 #include <cstdio> // for printf
+#include <stdlib.h>
 
 #include <cpprest/http_client.h>
 #include <cpprest/filestream.h>
@@ -129,11 +130,32 @@ void Client::downloadFile(FileInfo f) {
   } else {
     printf("FAILED TO DOWNLOAD\n");
   }
-
 }
 
 void Client::uploadFile(FileInfo f) {
   printf("Uploading file... ");
   printFileInfo(f);
+  
+  // Read file body
+  ifstream readF(baseDir + f.name);
+  std::stringstream buf;
+  buf << readF.rdbuf();
+  string contents = buf.str();
+
   // upload file to cdn node
+  string cdn_address = "http://" + f.cdnAddr + "/";
+  http_client cdn_client = http_client("http://localhost:5000/post");
+  
+  // Make request
+  http_response response;
+  try {
+    response = cdn_client.request(methods::POST, f.name, contents).get();
+  } catch (const std::exception& e) {
+    printf("ERROR, %s\n", e.what());
+  }
+  
+  if (response.status_code() == status_codes::OK)
+    printf("OK\n");
+  else
+    printf("FAILED TO UPLOAD\n");
 }
