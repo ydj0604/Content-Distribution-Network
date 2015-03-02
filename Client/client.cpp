@@ -117,7 +117,15 @@ void Client::downloadFile(FileInfo f) {
   
   if (response.status_code() == status_codes::OK) {
     printf("OK, saving...\n");
-    cout << response.extract_string().get() << endl;
+
+    string contents = response.extract_string().get();
+    cout << contents << endl;
+
+    // Write to file
+    ofstream saveFile;
+    saveFile.open(baseDir + f.name);
+    saveFile << contents;
+    saveFile.close();
   } else {
     printf("FAILED TO DOWNLOAD\n");
   }
