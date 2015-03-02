@@ -52,7 +52,7 @@ private:
     DIR *dir;
     struct dirent *ent;
     
-    long long storage_capacity = 8200; //the capacity is 10MB
+    long long storage_capacity = 10000000; //the capacity is 10MB
 	long CDN_addr;	// CDN's IP address
     char wd[256];  // storage directory path
 

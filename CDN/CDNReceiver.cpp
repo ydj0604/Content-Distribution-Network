@@ -29,6 +29,10 @@ CDNReceiver::CDNReceiver(utility::string_t url) : m_listener(url) {
 }
 
 void CDNReceiver::initialize(const string_t& address, CDN_Node* cdn) {
+	if(cdn==NULL) {
+		cout<<"CDNReceiver::initialize - input CDN is NULL"<<endl;
+		return;
+	}
 	CDNReceiver* instance = CDNReceiver::getInstance();
 	uri_builder uri(address);
 	uri.append_path(U("cdn/cache"));
@@ -47,22 +51,38 @@ void CDNReceiver::shutDown() {
 }
 
 void CDNReceiver::handle_delete(http_request message) {
+	/*
+	 * http://localhost:4000/cdn/cache/filename <DEL>
+	 */
+
 	string fileName = message.relative_uri().to_string();
 	fileName = fileName.substr(1);
-	if(m_cdn==NULL) {
-		message.reply(status_codes::NotFound, U("CDN server is not set"));
-		return;
-	}
-	if(m_cdn->delete_file(fileName))  //look_up_and_remove_storage(fileName ,1)) //remove the file
+
+	cout << endl << "---------------"<< endl;
+	cout << fileName << endl;
+	cout << message.to_string() << endl <<endl;
+
+	if(m_cdn->delete_file(fileName)) {  //look_up_and_remove_storage(fileName ,1)) //remove the file
+		CDNSender* sender = m_cdn->getSender();
+		sender->sendCacheDeleteMsgToMeta(fileName, m_cdn->get_cdn_id());
 		message.reply(status_codes::OK, U("delete succeeded"));
-	else
+	} else {
 		message.reply(status_codes::NotFound, U(fileName + " is not found in cdn"));
+	}
 }
 
 void CDNReceiver::handle_get(http_request message) {
+	/*
+	 * http://localhost:4000/cdn/cache/filename <GET>
+	 */
+
 	string fileName = message.relative_uri().to_string();
 	fileName = fileName.substr(1); //remove the first /
 	CDNSender* sender = m_cdn->getSender();
+
+	cout << endl << "---------------"<< endl;
+	cout << fileName << endl;
+	cout << message.to_string() << endl <<endl;
 
 	if(!m_cdn->look_up_and_remove_storage(fileName, 0)) { //cdn doesn't have the file in its cache
 		if(sender->getFileFromFSS(fileName, m_cdn->get_cdn_id()) != 0) {
@@ -94,10 +114,21 @@ void CDNReceiver::handle_get(http_request message) {
 }
 
 void CDNReceiver::handle_put(http_request message) {
+	/*
+	 * http://localhost:4000/cdn/cache/filename?filehash <PUT>
+	 * {
+	 * 		Body: contents
+	 * }
+	 */
+
 	string fileName = message.relative_uri().path();
 	fileName = fileName.substr(1); //remove the first /
 	string fileHash = message.relative_uri().query();
 	string contents = message.extract_string().get();
+
+	cout << endl << "---------------"<< endl;
+	cout << fileName << endl;
+	cout << message.to_string() << endl <<endl;
 
 	CDNSender* sender = m_cdn->getSender();
 	vector<string> deletedFiles;
@@ -107,27 +138,19 @@ void CDNReceiver::handle_put(http_request message) {
 	}
 
 	for(int i=0; i<deletedFiles.size(); i++) { //send msgs to meta to notify that this cdn no longer contains deletedFiles
-		//sender->sendCacheDeleteMsgToMeta(deletedFiles[i], m_cdn->get_cdn_id());
+		sender->sendCacheDeleteMsgToMeta(deletedFiles[i], m_cdn->get_cdn_id());
 	}
 
-	if(sender->uploadFileToFSS(fileName, contents) != 0) {
+	if(sender->uploadFileToFSS(fileName, contents) != 0) { //need to roll back
 		m_cdn->delete_file(fileName);
 		message.reply(status_codes::NotFound, "failed to write the file to fss");
 		return;
 	}
 
-	//update meta server
-	//sender->sendFileUpdateMsgToMeta(fileName, fileHash, m_cdn->get_cdn_id());
-	//sender->sendCacheUpdateMsgToMeta(fileName, m_cdn->get_cdn_id());
+	//update meta server when everything is done properly
+	sender->sendFileUpdateMsgToMeta(fileName, fileHash, m_cdn->get_cdn_id());
+	sender->sendCacheUpdateMsgToMeta(fileName, m_cdn->get_cdn_id());
 	message.reply(status_codes::OK, fileName + ": " + fileHash); //testing purpose
-
-
-	/*
-	 * 1. extract message body (file contents) into string
-	 * 2. write the contents into filPath
-	 * 3. send the file to FSS
-	 * 4. send the msg to Meta to broadcast invalidate msgs
-	 */
 }
 
 

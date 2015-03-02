@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
 		metaIpAddr = temp;
 		string temp2(argv[2]);
 		fssIpAddr = temp2;
+		cout<<"Meta IP Addr: " + metaIpAddr<<endl;
+		cout<<"FSS IP Addr: " + fssIpAddr<<endl;
 	}
 
 	CDN_Node* cdn = new CDN_Node(metaIpAddr, fssIpAddr);

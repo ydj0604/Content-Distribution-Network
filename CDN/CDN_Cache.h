@@ -43,7 +43,6 @@ public:
             keyToNodeMap.erase(tail->key);
             Node* tempTail = tail;
             string filename = tail->key;
-            cout << "LRUCache: removed filename is: " << filename << endl;
             tail = tail->prev;
             if(tail)
             	tail->next = NULL;
@@ -69,21 +68,6 @@ public:
         	keyToNodeMap.erase(key);
         	delete nodeToRemove;
         }
-
-        /*
-        unordered_map<string, Node*>::iterator i = keyToNodeMap.begin();
-        while(i != keyToNodeMap.end()){
-            if(i->first == key) {
-                keyToNodeMap.erase(i->first);
-                Node* tempTail = i->second;
-                i->second->next->prev = i->second->prev;
-                i->second->prev->next = i->second->next;
-                delete tempTail;
-                break;
-            }
-            ++i;
-        }
-        */
     }
 
 private:

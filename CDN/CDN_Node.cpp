@@ -26,7 +26,7 @@ CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
 	m_sender->setCDN(this);
     get_address(); // initialize cdn address
     m_cdnId = -1;
-    //m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
+    m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
 }
 
 CDN_Node::~CDN_Node() {
@@ -40,11 +40,7 @@ bool CDN_Node::make_storage() {
 }
 
 void CDN_Node::get_address() {
-    
-    //set the external IpAddress and convert into number for location
     get_and_set_CDN_addr(); //ip address is assigned in get_and_set_CDN_addr()
-    
-    /* get the gps information and assign them to Address */
     get_gps_info();
     
     m_address.latLng.first = cdn_gps.first;
@@ -68,24 +64,21 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 			if((dir = opendir(wd)) != NULL) {
 				while ((ent = readdir(dir)) != NULL) {
 					if (strcmp(ent->d_name,cstr)==0 && signal == 0) {
-                        cout << cstr << " is located in this directory" << endl;
 						return true;
                     } else if (strcmp(ent->d_name,cstr)==0 && signal == 1) {
                         //remove the file
                         char temp[256];
                         strcpy(temp,path_maker(cstr));
                         if(remove(temp) == 0) {
-                            cout << "deleted " + filename << endl;
                             return true;
                         } else {
-                            cout << "Can't remove " << cstr << ": " << strerror(errno) << endl;
+                            return false;
                         }
                     }
 				}
 				closedir (dir);
 			} else {
-				/* can not open  */
-				perror("Can't open the directory");
+				perror("Can't open the working directory");
 				return false;
 			}
 
@@ -96,7 +89,6 @@ bool CDN_Node::write_file(const string &contents, string filename, vector<string
     
     //Configure the storage's capacity and free some portion if exceeds and insert the new file information
     long long file_size = contents.size();
-    cout << "file size: " << file_size << endl;
     
     if(!managing_files(filename, file_size, deletedfiles))
     	return false;
@@ -112,9 +104,7 @@ bool CDN_Node::write_file(const string &contents, string filename, vector<string
         f << contents;
         f.close();
     } else {
-        cout << "Unable to write the file";
         return false;
-
     }
     return true;
 }
@@ -143,22 +133,14 @@ string CDN_Node::load_file(string filename) {
  files until it satisfy the condition.
  */
 bool CDN_Node::managing_files(string filename,long long file_size, vector<string>& deletedfiles) {
-	/*
-		Manage the file storage to maintain its free-capacity.
-	*/
-
     while((this->get_size_of_storage() + file_size) > storage_capacity) {
-        cout << "current capacity: " << this->get_size_of_storage() << endl;
         string file_name = file_tracker.remove(deletedfiles);
         if(file_name=="")
         	return false;
         this->look_up_and_remove_storage(file_name, 1);
     }
-    
     //insert new file and size into tracker
     file_tracker.set(filename, file_size);
-    
-    cout << "Current storage capacity is: " << this->get_size_of_storage() << endl;
     return true;
 }
 
@@ -173,7 +155,6 @@ long long CDN_Node::get_size_of_storage() {
     if((dir = opendir(wd)) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             stat(path_maker(ent->d_name), &sb);
-            //cout << "size of file: " << sb.st_size << endl;
             size_of_storage += (long long)sb.st_size;
         }
         closedir (dir);
@@ -204,7 +185,6 @@ void CDN_Node::endListening(){
  Before get the gps information, we have to convert IP address into some certain numbers that fit into
  GPS lookup table. So we have to get external IP address first. Then split and convert it into integers.
  */
-
 void CDN_Node::get_and_set_CDN_addr() {
     string line;
     ifstream IPFile;
@@ -272,7 +252,7 @@ pair <double, double> CDN_Node::get_gps_info (){
     
     if (!f.is_open())
     {
-        cout << "failed to open the file!" << endl;
+        cout << "failed to open the file for gps info" << endl;
     }
     
     f >> str; // omit the header
