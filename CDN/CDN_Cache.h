@@ -44,8 +44,9 @@ public:
             cout << "removed filename is: " << filename << endl;
             tail = tail->prev;
             tail->next = NULL;
-            cout << "new last filename is: " << tail->key << endl;
-            delete tempTail;
+            //cout << "new last filename is: " << tail->key << endl;
+            if(tempTail)
+            	delete tempTail;
             deletedfiles.push_back(filename);
             return filename;
     }

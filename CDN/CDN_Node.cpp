@@ -19,18 +19,6 @@ using namespace std;
 
 
 CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
-    //creating file directory
-    
-	/*
-    file_tracker.set("IMG_0428.JPG", 1500000);
-    file_tracker.set("IMG_0429.JPG", 1400000);
-    file_tracker.set("IMG_0433.JPG", 1800000);
-    file_tracker.set("IMG_0436.JPG", 1600000);
-    file_tracker.set("IMG_0496.JPG", 1500000);
-    file_tracker.set("IMG_0620.JPG", 1600000);
-    file_tracker.set("IMG_0629.JPG", 1800000);
-    */
-
 	make_storage();
 	m_metaIpAddr = metaIpAddr;
 	m_fssIpAddr = fssIpAddr;
@@ -38,10 +26,8 @@ CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
     
 	//TODO: initialize m_address
     get_address();
-    
-    
-    
-    m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
+    m_cdnId = -1;
+    //m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
 }
 
 CDN_Node::~CDN_Node() {
@@ -49,28 +35,9 @@ CDN_Node::~CDN_Node() {
 }
 
 bool CDN_Node::make_storage() {
-		/* creating the file directory*/
-        //getcwd( wd, 256 );  // give that buffer to getcwd and tell it how big the buffer is.
-        /*
-		// if you want to put that data in a string...
-		string cwd = wd;  // like "long double main" suggested
-
-		//assign the path for creating new directory
-		file_path = cwd;
-		file_path.append("/cdn_node");
-        */
-
-		/* ORIGINAL
-        strcpy(wd, "/Users/wonjaelee/Desktop");
-        strcat(wd, "/cdn_node");
-
-		mkdir(wd,7777);
-		*/
-    
 	strcpy(wd, CDN_DIR);
-	mkdir(wd, 7777);
+	mkdir(wd, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	return true;
-
 }
 
 void CDN_Node::get_address() {
@@ -83,7 +50,11 @@ void CDN_Node::get_address() {
     
     m_address.latLng.first = cdn_gps.first;
     m_address.latLng.second = cdn_gps.second;
-    
+    //ip address is assigned in get_and_set_CDN_addr()
+
+    cout<<"CDN IpAddr: "<<m_address.ipAddr<<endl;
+    cout<<"CDN Lat: "<<m_address.latLng.first<<" ";
+    cout<<"CDN Lng: "<<m_address.latLng.second<<endl;
 }
 
 //TODO: take relative file path instead of file name as the first argument !!
@@ -118,7 +89,7 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 			} else {
 				/* can not open directory */
 				perror("Can't open the directory");
-				return EXIT_FAILURE;
+				return false;
 			}
 
 			return false;
@@ -246,6 +217,7 @@ void CDN_Node::get_and_set_CDN_addr() {
     if(IPFile.is_open())
     {
         getline(IPFile,line);
+        m_address.ipAddr = line; //assign ip address
         string test = line;
         
         //get the length of string
@@ -291,7 +263,7 @@ pair <double, double> CDN_Node::get_gps_info (){
     vector<CData> vdata;
     
     //this path have to change.
-    f.open("/Users/wonjaelee/desktop/USA_edit.csv");
+    f.open("/home/jin/workspace/C++/CDN/CDN/USA_edit.csv");
     
     if (!f.is_open())
     {

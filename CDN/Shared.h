@@ -1,5 +1,13 @@
-#define CDN_DIR "./cdn/cache"
+#ifndef SHARED_H
+#define SHARED_H
+
+#define CDN_DIR "cache"
 #define CDN_ADDR "http://localhost:5000"
+
+#include <utility>
+#include <string>
+
+using namespace std;
 
 struct Address {
 	pair<double, double> latLng; //always keep 2 decimal digits for latitude and longitude
@@ -15,3 +23,5 @@ struct Address {
 };
 
 typedef struct Address Address;
+
+#endif

@@ -3,6 +3,7 @@
 #include "CDN_Node.h"
 #include "CDNSender.h"
 #include "Shared.h"
+#include <string>
 
 using namespace std;
 using namespace web;
@@ -77,15 +78,17 @@ int CDNSender::sendRegisterMsgToMeta(Address cdnAddr, int& assignedId) {
 	jsonObj[U("Lng")] = json::value::number(cdnAddr.latLng.second);
 	http_response resp = m_meta_client.request(methods::POST, U("/meta/register/"), jsonObj).get();
 	if(resp.status_code() == status_codes::OK) {
-		json::value jsonObj = message.extract_json().get();
+		json::value jsonObj = resp.extract_json().get();
 		try {
-			assignedId = jsonObj.at(U("CdnId")).as_integer()
+			assignedId = jsonObj.at(U("CdnId")).as_integer();
 		} catch(json::json_exception &e) {
 			return -2; //meta returns an invalid response
 		}
 		return 0;
-	} else
+	} else {
+		cout<<"CDNSender::sendRegisterMsgToMeta - registration failed"<<endl;
 		return -1;
+	}
 }
 
 /*
@@ -109,7 +112,6 @@ int CDNSender::getFileFromFSS(string fileName, int cdnId) {
 }
 
 int CDNSender::uploadFileToFSS(string fileName, const string& contents) {
-	string contents = m_cdn->load_file(fileName);
 	http_response resp = m_fss_client.request(methods::POST, U("/post/"+fileName), contents).get();
 	if(resp.status_code() != status_codes::OK)
 		return -1;

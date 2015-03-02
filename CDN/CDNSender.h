@@ -26,7 +26,7 @@ public:
 	int sendRegisterMsgToMeta(Address cdnAddr, int& assignedId); //when cdn comes live for the first time
 
 	//for fss
-	int getFileFromFSS(string fileName);
+	int getFileFromFSS(string fileName, int cdnId);
 	int uploadFileToFSS(string fileName, const string& contents);
 
 private:
