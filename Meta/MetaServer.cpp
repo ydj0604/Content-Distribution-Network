@@ -308,7 +308,6 @@ int MetaServer::deleteMetaEntry(string fileName) {
 
 	if(found==false) {
 		cout<<"MetaServer::deleteMetaEntry - "+fileName+" is not found for delete operation"<<endl;
-		return -1;
 	}
 	return 0;
 }
