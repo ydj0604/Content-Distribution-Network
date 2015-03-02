@@ -7,7 +7,7 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-  Client c;
+  Client c = Client("http://localhost:5000/"); // initialize origin ip
 
   // baseDir set as arg2
   if (argc > 2)

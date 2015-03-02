@@ -1,9 +1,9 @@
 CC=g++
 CC_FLAGS=-std=c++11 -Wall -Werror -Wextra -Wno-unused-parameter
-LD_FLAGS=-lcpprest
+LD_FLAGS=-lcpprest 
 
 EXEC=client
-SOURCES=$(wildcard *.cpp)
+SOURCES=$(wildcard *.cpp) ../ipToLatLng/ipToLatLng.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 
 $(EXEC): $(OBJECTS)

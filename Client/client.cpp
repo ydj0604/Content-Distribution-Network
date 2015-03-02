@@ -1,18 +1,19 @@
 #include "client.h"
 #include "../ipToLatLng/ipToLatLng.h"
-#include "cpprest/http_client.h"
+#include <cpprest/http_client.h>
 #include <iostream>
 #include "dirent.h" // for file reading
 #include "hash.h"
 #include <cstdio> // for printf
 #include <stdlib.h>
 
-
 using namespace std;
 using namespace web;
 using namespace utility;
 using namespace http;
 using namespace json;
+using namespace web::http;
+using namespace web::http::client;
 
 
 FileInfo newFileInfo(string name, string hash, string cdnAddr) {
@@ -45,7 +46,7 @@ void Client::syncDownload() {
     printFileInfo(files[i]);
 
   // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles(files);
+  vector<FileInfo> diffFiles = compareListOfFiles(files, 0);
 
   // For each file that needs to be updated, download
   for(size_t i = 0; i < diffFiles.size();i ++)
@@ -59,7 +60,7 @@ void Client::syncUpload() {
     printFileInfo(files[i]);
 
   // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles(files);
+  vector<FileInfo> diffFiles = compareListOfFiles(files, 1);
 
   // For each file that needs to be updated, upload
   for(size_t i = 0; i < diffFiles.size();i ++)
@@ -77,7 +78,7 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
 
   // create json array of FileList
   json::value req_fileList = json::value::array();
-  for (int i = 0; i < files.size(); i++) {
+  for (size_t i = 0; i < files.size(); i++) {
     json::value currFileObj = json::value::object();
     currFileObj[U("Name")] = json::value::string(U(files[i].name));
     currFileObj[U("Hash")] = json::value::string(U(files[i].hash));
@@ -125,8 +126,8 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
       
       for(auto& fileObj : compare_list.as_array()) {
         FileInfo fileNew;
-        fileNew.name = fileObj.at(U("Name"));
-        fileNew.cdnAddr = fileObj.at(U("Address"));
+        fileNew.name = fileObj.at(U("Name")).as_string();
+        fileNew.cdnAddr = fileObj.at(U("Address")).as_string();
 
 	// push the newly constructed file into the list of diff_files
         diff_files.push_back(fileNew);
