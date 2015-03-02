@@ -91,3 +91,29 @@ int CDNSender::sendRegisterMsgToMeta(Address cdnAddr, int& assignedId) {
 /*
  * Sender functions for communication with Fss
  */
+
+
+int CDNSender::getFileFromFSS(string fileName, int cdnId) {
+	http_response resp = m_fss_client.request(methods::GET, U("/get/"+fileName)).get();
+	if(resp.status_code() != status_codes::OK)
+		return -1;
+	string contents = resp.extract_string().get();
+	vector<string> deletedFiles;
+	if(m_cdn->write_file(contents, fileName, deletedFiles))
+		return -2;
+	for(int i=0; i<deletedFiles.size(); i++) {
+		sendCacheDeleteMsgToMeta(deletedFiles[i], cdnId);
+	}
+	sendCacheUpdateMsgToMeta(fileName, cdnId);
+	return 0;
+}
+
+int CDNSender::uploadFileToFSS(string fileName, const string& contents) {
+	string contents = m_cdn->load_file(fileName);
+	http_response resp = m_fss_client.request(methods::POST, U("/post/"+fileName), contents).get();
+	if(resp.status_code() != status_codes::OK)
+		return -1;
+	return 0;
+}
+
+

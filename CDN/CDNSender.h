@@ -5,6 +5,8 @@
 #include "Shared.h"
 #include <string>
 
+class CDN_Node;
+
 using namespace std;
 using namespace web;
 using namespace http;
@@ -14,6 +16,7 @@ using namespace http::client;
 class CDNSender {
 public:
 	CDNSender(string metaIpAddr, string fssIpAddr);
+	void setCDN(CDN_Node* cdn) { m_cdn = cdn; }
 
 	//for meta
 	int sendCacheUpdateMsgToMeta(string fileName, int cdnId); //when cdn pulls a file from FSS and stores it into its cache
@@ -23,10 +26,11 @@ public:
 	int sendRegisterMsgToMeta(Address cdnAddr, int& assignedId); //when cdn comes live for the first time
 
 	//for fss
-	int sendGetFileMsgToFSS();
-	int sendUpdateFileMsgToFSS();
-	int sendNewFileMsgToFSS();
+	int getFileFromFSS(string fileName);
+	int uploadFileToFSS(string fileName, const string& contents);
+
 private:
+	CDN_Node* m_cdn;
 	string m_metaIpAddr;
 	string m_fssIpAddr;
 	http_client m_meta_client;
