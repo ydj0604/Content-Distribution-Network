@@ -31,10 +31,30 @@ void printFileInfo(FileInfo f) {
 
 Client::Client() {
   baseDir = "./";
+
+  // get the ip_address of the client and lat/lng
+  // Get client ip instance
+  ipToLatLng* ip_instance = new ipToLatLng();
+  client_ip = ip_instance->getipaddr();
+
+  // use GET http request to retrieve client's latitude/longitude
+  ip_instance->IPJsonToLatLng( client_ip );
+  client_lat = ip_instance->getlat();
+  client_lng = ip_instance->getlng();
 }
 
 Client::Client( string orig_ip ) : m_orig_ip(orig_ip) {
   // store ip address of Origin
+
+  // get the ip_address of the client and lat/lng
+  // Get client ip instance
+  ipToLatLng* ip_instance = new ipToLatLng();
+  client_ip = ip_instance->getipaddr();
+
+  // use GET http request to retrieve client's latitude/longitude
+  ip_instance->IPJsonToLatLng( client_ip );
+  client_lat = ip_instance->getlat();
+  client_lng = ip_instance->getlng();
 }
 
 Client::~Client() {
@@ -89,18 +109,8 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
   }
 
   // store this array in json object
+  // and also the IP, Lat, Lng
   req_json[U("FileList")] = req_fileList;
-
-  // Get client ip instance
-  ipToLatLng* ip_instance = new ipToLatLng();
-  client_ip = ip_instance->getipaddr();
-
-  // use POST http request to retrieve client's latitude/longitude
-  ip_instance->IPJsonToLatLng( client_ip );
-  client_lat = ip_instance->getlat();
-  client_lng = ip_instance->getlng();
-
-  // Now, store these in json object
   req_json[U("IP")] = json::value::string(U(client_ip));
   req_json[U("Lat")] = json::value::number(client_lat);
   req_json[U("Lng")] = json::value::number(client_lng);
