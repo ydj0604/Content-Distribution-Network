@@ -21,8 +21,8 @@ int main(int argc, char *argv[]) {
 	if(argc > 2) {
 		string temp(argv[1]);
 		metaIpAddr = temp;
-		string temp(argv[2]);
-		fssIpAddr = temp;
+		string temp2(argv[2]);
+		fssIpAddr = temp2;
 	}
 
 	CDN_Node* cdn = new CDN_Node(metaIpAddr, fssIpAddr);
