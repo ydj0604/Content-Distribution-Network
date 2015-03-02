@@ -24,9 +24,10 @@ public:
   string baseDir;
 private:
   vector<FileInfo> compareListOfFiles(vector<FileInfo>& files, int type);
-  vector<FileInfo> getListOfFilesFromDirectory();
+  vector<FileInfo> getListOfFilesFromDirectory(string subpath);
   void downloadFile(FileInfo f);
   void uploadFile(FileInfo f);
+  bool isDir(string dirPath);
   string client_ip;
   double client_lat, client_lng;
   string m_orig_ip;

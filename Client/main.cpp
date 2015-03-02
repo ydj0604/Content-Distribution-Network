@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   // baseDir set as arg2
   if (argc > 2)
     c.baseDir = argv[2];
-  printf("Using %s as base directory", c.baseDir.c_str());
+  printf("Using %s as base directory\n", c.baseDir.c_str());
 
   if (argc > 1) {
     if (strcmp(argv[1], "--download") == 0) {

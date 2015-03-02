@@ -6,6 +6,7 @@
 #include "hash.h"
 #include <cstdio> // for printf
 #include <stdlib.h>
+#include <sys/stat.h> // for dir checking
 
 using namespace std;
 using namespace web;
@@ -41,7 +42,7 @@ Client::~Client() {
 
 void Client::syncDownload() {
   // Get list of files in directory
-  vector<FileInfo> files = getListOfFilesFromDirectory();
+  vector<FileInfo> files = getListOfFilesFromDirectory("");
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
 
@@ -55,7 +56,7 @@ void Client::syncDownload() {
 
 void Client::syncUpload() {
   // Get list of files in directory
-  vector<FileInfo> files = getListOfFilesFromDirectory();
+  vector<FileInfo> files = getListOfFilesFromDirectory("");
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
 
@@ -145,13 +146,29 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
   return diff_files;
 }
 
-vector<FileInfo> Client::getListOfFilesFromDirectory() {
-  cout << "Getting list of files from " << baseDir << endl;
+bool Client::isDir(string dirPath) {
+  // Return 1 if dir, else 0
+  struct stat s;
+  stat(dirPath.c_str(), &s);
+
+  if (s.st_mode & S_IFDIR)
+    return 1;
+  else
+    return 0;
+}
+
+vector<FileInfo> Client::getListOfFilesFromDirectory(string subpath) {
+  /*
+   * Recursively find all files in basedir/subpath
+   * for the top level call, use subpath="", basedir will be appeneded automatically
+   */
+  string path = baseDir + subpath;
+  cout << "Getting list of files from " << path << endl;
   vector<FileInfo> files;
 
-  DIR *dir = opendir(baseDir.c_str());
+  DIR *dir = opendir(path.c_str());
   if (dir == NULL) {
-    cout << "Could not open directory " << baseDir << endl;
+    cout << "Could not open directory " << path << endl;
     return files;
   }
 
@@ -161,8 +178,15 @@ vector<FileInfo> Client::getListOfFilesFromDirectory() {
     if (ent->d_name[0] == '.')
       continue;
 
+    if (isDir(path+ent->d_name)) {
+      cout << path + ent->d_name << " is dir" <<endl;
+      vector<FileInfo> subDirFiles = getListOfFilesFromDirectory(string(ent->d_name) + "/");
+      files.insert(files.end(), subDirFiles.begin(), subDirFiles.end());
+      continue;
+    }
+
     // Convert to string object and add to return vector
-    FileInfo f = newFileInfo(ent->d_name, hashFile(baseDir+ent->d_name));
+    FileInfo f = newFileInfo(subpath+ent->d_name, hashFile(path+ent->d_name));
     files.push_back(f);
   }
 
