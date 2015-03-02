@@ -1,20 +1,19 @@
 #include "client.h"
+#include "../ipToLatLng/ipToLatLng.h"
+#include "cpprest/http_client.h"
 #include <iostream>
 #include "dirent.h" // for file reading
 #include "hash.h"
 #include <cstdio> // for printf
 #include <stdlib.h>
 
-#include <cpprest/http_client.h>
-#include <cpprest/filestream.h>
-using namespace utility;                    // Common utilities like string conversions
-using namespace web;                        // Common features like URIs.
-using namespace web::http;                  // Common HTTP functionality
-using namespace web::http::client;          // HTTP client features
-using namespace concurrency::streams;       // Asynchronous streams
-
 
 using namespace std;
+using namespace web;
+using namespace utility;
+using namespace http;
+using namespace json;
+
 
 FileInfo newFileInfo(string name, string hash, string cdnAddr) {
   FileInfo f = FileInfo();
@@ -30,6 +29,10 @@ void printFileInfo(FileInfo f) {
 
 Client::Client() {
   baseDir = "./";
+}
+
+Client::Client( string orig_ip ) : m_orig_ip(orig_ip) {
+  // store ip address of Origin
 }
 
 Client::~Client() {
@@ -63,16 +66,82 @@ void Client::syncUpload() {
     uploadFile(diffFiles[i]);
 }
 
-vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files) {
+vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
   // Upload list of file / hashes
   // return list of fileNames that need to be dl'd / uploaded
-  vector<string> diff;
 
-  // upload files
-  // diff = what server returns as files needed to download
+  /* WHAT WAS NEWLY IMPLEMENTED */
+  // create json object to be attached in the http request body
+  json::value req_json = json::value::object();
+  req_json[U("Type")] = json::value::number(type);
 
-  // return diff;
-  return files;
+  // create json array of FileList
+  json::value req_fileList = json::value::array();
+  for (int i = 0; i < files.size(); i++) {
+    json::value currFileObj = json::value::object();
+    currFileObj[U("Name")] = json::value::string(U(files[i].name));
+    currFileObj[U("Hash")] = json::value::string(U(files[i].hash));
+    currFileObj[U("Address")] = json::value::string(U(files[i].cdnAddr));
+
+    req_fileList[i] = currFileObj;
+  }
+
+  // store this array in json object
+  req_json[U("FileList")] = req_fileList;
+
+  // Get client ip instance
+  ipToLatLng* ip_instance = new ipToLatLng();
+  client_ip = ip_instance->getipaddr();
+
+  // use POST http request to retrieve client's latitude/longitude
+  ip_instance->IPJsonToLatLng( client_ip );
+  client_lat = ip_instance->getlat();
+  client_lng = ip_instance->getlng();
+
+  // Now, store these in json object
+  req_json[U("IP")] = json::value::string(U(client_ip));
+  req_json[U("Lat")] = json::value::number(client_lat);
+  req_json[U("Lng")] = json::value::number(client_lng);
+
+  // request message should be directed to Origin IP address
+  uri_builder origin_url(U(m_orig_ip));
+  origin_url.append_path(U("origin/explicit"));
+
+  http_client client(origin_url.to_uri());	// create client object
+
+  // POST this json message to the origin to ask for which files need to be uploaded/downloaded
+  // given the file list already in sync with FSS
+  http_response fileComp_resp = client.request( methods::POST ).get();
+
+  vector<FileInfo> diff_files;
+
+  try {
+    if (fileComp_resp.status_code() == status_codes::OK ) {
+      cout << "compared file list has been retrieved!" << endl;
+
+      json::value jValue = fileComp_resp.extract_json().get();
+      json::value& compare_list = jValue.at(U("FileList"));
+
+      
+      for(auto& fileObj : compare_list.as_array()) {
+        FileInfo fileNew;
+        fileNew.name = fileObj.at(U("Name"));
+        fileNew.cdnAddr = fileObj.at(U("Address"));
+
+	// push the newly constructed file into the list of diff_files
+        diff_files.push_back(fileNew);
+      }
+    }
+
+    else { // handle non-OK status codes
+
+    }
+  } catch ( json::json_exception &e ) {
+      fprintf(stderr, "JSON object error: %s\n", e.what());
+      return diff_files;
+  }
+
+  return diff_files;
 }
 
 vector<FileInfo> Client::getListOfFilesFromDirectory() {

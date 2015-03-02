@@ -17,15 +17,19 @@ void printFileInfo(FileInfo f);
 class Client {
 public:
   Client();
+  Client(string orig_ip);
   ~Client();
   void syncDownload();
   void syncUpload();
   string baseDir;
 private:
-  vector<FileInfo> compareListOfFiles(vector<FileInfo>& files);
+  vector<FileInfo> compareListOfFiles(vector<FileInfo>& files, int type);
   vector<FileInfo> getListOfFilesFromDirectory();
   void downloadFile(FileInfo f);
   void uploadFile(FileInfo f);
+  string client_ip;
+  double client_lat, client_lng;
+  string m_orig_ip;
 };
 
 #endif
