@@ -28,6 +28,7 @@ void printFileInfo(FileInfo f) {
 }
 
 Client::Client() {
+  baseDir = "./";
 }
 
 Client::~Client() {
@@ -74,12 +75,12 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files) {
 }
 
 vector<FileInfo> Client::getListOfFilesFromDirectory() {
-  cout << "Getting list of files from ./" << endl;
+  cout << "Getting list of files from " << baseDir << endl;
   vector<FileInfo> files;
 
-  DIR *dir = opendir(".");
+  DIR *dir = opendir(baseDir.c_str());
   if (dir == NULL) {
-    cout << "Could not open directory ./" << endl;
+    cout << "Could not open directory " << baseDir << endl;
     return files;
   }
 

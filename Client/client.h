@@ -20,6 +20,7 @@ public:
   ~Client();
   void syncDownload();
   void syncUpload();
+  string baseDir;
 private:
   vector<FileInfo> compareListOfFiles(vector<FileInfo>& files);
   vector<FileInfo> getListOfFilesFromDirectory();
