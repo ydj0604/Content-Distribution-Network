@@ -13,15 +13,13 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
-
+#include <sstream>
 
 using namespace std;
 
 
 CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
     //creating file directory
-    //set the external IpAddress and convert into number for location
-    //get_and_set_CDN_addr();
     
 	/*
     file_tracker.set("IMG_0428.JPG", 1500000);
@@ -37,8 +35,13 @@ CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
 	m_metaIpAddr = metaIpAddr;
 	m_fssIpAddr = fssIpAddr;
 	m_sender = new CDNSender(metaIpAddr, fssIpAddr);
+    
 	//TODO: initialize m_address
-	while(m_sender->sendRegisterMsg(m_address, m_cdnId)!=0) {} //send register msg to meta to retrieve an id unitl it succeeds
+    get_address();
+    
+    
+    
+    m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
 }
 
 CDN_Node::~CDN_Node() {
@@ -70,6 +73,18 @@ bool CDN_Node::make_storage() {
 
 }
 
+void CDN_Node::get_address() {
+    
+    //set the external IpAddress and convert into number for location
+    get_and_set_CDN_addr();
+    
+    /* get the gps information and assign them to Address */
+    get_gps_info();
+    
+    m_address.latLng.first = cdn_gps.first;
+    m_address.latLng.second = cdn_gps.second;
+    
+}
 
 //TODO: take relative file path instead of file name as the first argument !!
 bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
@@ -109,21 +124,68 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 			return false;
 }
 
+bool CDN_Node::write_file(const string &contents, string filename, vector<string>& deletedfiles){
+    
+    //Configure the storage's capacity and free some portion if exceeds and insert the new file information
+    long long file_size = contents.size();
+    cout << "file size: " << file_size << endl;
+    
+    managing_files(filename, file_size, deletedfiles);
+    
+    //convert string to char
+    const char* cstr = filename.c_str();
+    char temp[256];
+    strcpy(temp,path_maker(cstr));
+    
+    //Write to file
+    ofstream f (temp);
+    if(f.is_open()){
+        f << contents;
+        f.close();
+    } else {
+        cout << "Unable to write the file";
+        return false;
+
+    }
+    return true;
+}
+
+string CDN_Node::load_file(string filename) {
+    //convert string to char
+    const char* cstr = filename.c_str();
+    char temp[256];
+    strcpy(temp,path_maker(cstr));
+    //Return contents of file
+    ifstream f (temp);
+    if(f.is_open()) {
+        //update cache information
+        file_tracker.get(filename);
+        
+        stringstream buf;
+        buf << f.rdbuf();
+        return buf.str();
+    } else {
+        return "Can't load the file";
+    }
+}
 
 /*
  Whenever we try to save the file into Directory, CDN takes the new file size and compare it whether
  the file size fits to the capacity or not. If it exceeds the limit, this function remove least used
  files until it satisfy the condition.
  */
-void CDN_Node::managing_files(long long file_size) {
+void CDN_Node::managing_files(string filename,long long file_size, vector<string>& deletedfiles) {
 	/*
 		Manage the file storage to maintain its free-capacity.
 	*/
     while((this->get_size_of_storage() + file_size) > storage_capacity) {
         cout << "current capacity: " << this->get_size_of_storage() << endl;
-        string file_name = file_tracker.remove();
+        string file_name = file_tracker.remove(deletedfiles);
         this->look_up_and_remove_storage(file_name, 1);
     }
+    
+    //insert new file and size into tracker
+    file_tracker.set(filename, file_size);
     
     cout << "Current storage capacity is: " << this->get_size_of_storage() << endl;
     

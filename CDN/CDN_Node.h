@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <utility>
 #include "CDN_Cache.h"
+#include "Shared.h"
 #include <string>
 #include <sys/stat.h> //for creating directory
 #include <dirent.h> //for reading directory
@@ -24,7 +25,7 @@ public:
 	//utility functions
 	bool make_storage();
 	bool look_up_and_remove_storage(string filename, int signal);
-    void managing_files(long long file_size);
+    void managing_files(string filename, long long file_size, vector<string>& deletedfiles);
     long long get_size_of_storage();
     char* path_maker(const char* name);
 
@@ -32,6 +33,14 @@ public:
     void startListening();
     void endListening();
     CDNSender* getSender() { return m_sender; }
+    
+    //added after
+    void get_address();
+    string get_fss_ip() { return m_fssIpAddr; }
+    string get_meta_ip() { return m_metaIpAddr;}
+    int get_cdn_id() {return m_cdnId;}
+    bool write_file (const string& contents, string filename,vector<string>& deletedfiles);
+    string load_file (string filename);
     
     //gps functions
     void get_and_set_CDN_addr();

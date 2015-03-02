@@ -37,7 +37,7 @@ public:
         }
     }
     
-    string remove() {
+    string remove(vector<string>& deletedfiles) {
             keyToNodeMap.erase(tail->key);
             Node* tempTail = tail;
             string filename = tail->key;
@@ -46,6 +46,7 @@ public:
             tail->next = NULL;
             cout << "new last filename is: " << tail->key << endl;
             delete tempTail;
+            deletedfiles.push_back(filename);
             return filename;
     }
     
