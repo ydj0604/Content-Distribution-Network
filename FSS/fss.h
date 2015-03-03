@@ -10,15 +10,16 @@ using namespace http;
 using namespace web::http::experimental::listener;
 
 #define FSS_ADDR "http://localhost:5000/"
-#define FSS_DIR "../../testdir"
+#define FSS_DIR "FSS_Storage"
 
 class FSS {
 public:
-  FSS();
+  FSS(string metaIpAddrPort="localhost:3000/");
   ~FSS();
   void listen();
 private:
   // Request function
+  void register_with_meta();
   void handle_get(http_request message);
   void handle_post(http_request message);
   http_listener get_listener;
@@ -27,5 +28,8 @@ private:
   // Other utility
   bool has_file(string filePath);
   string get_file_contents(string filePath);
+  string fss_ipport;
+  double fss_lat, fss_lng;
+  string m_metaIpAddrPort;
 };
 #endif
