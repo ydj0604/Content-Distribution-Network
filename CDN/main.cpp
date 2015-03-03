@@ -17,17 +17,17 @@ using namespace utility;
 using namespace concurrency;
 
 int main(int argc, char *argv[]) {
-	string metaIpAddr="http://localhost:5000", fssIpAddr="http://localhost:5000";
-	if(argc > 2) {
+	string cdnIpAddr = "http://localhost:4000", metaIpAddr="http://localhost:5000", fssIpAddr="http://localhost:6000";
+	if(argc > 3) {
 		string temp(argv[1]);
-		metaIpAddr = temp;
-		string temp2(argv[2]);
+		cdnIpAddr = temp;
+		string temp1(argv[2]);
+		metaIpAddr = temp1;
+		string temp2(argv[3]);
 		fssIpAddr = temp2;
-		cout<<"Meta IP Addr: " + metaIpAddr<<endl;
-		cout<<"FSS IP Addr: " + fssIpAddr<<endl;
 	}
 
-	CDN_Node* cdn = new CDN_Node(metaIpAddr, fssIpAddr);
+	CDN_Node* cdn = new CDN_Node(cdnIpAddr, metaIpAddr, fssIpAddr);
 	cdn->startListening();
 	std::cout << "Press ENTER to stop CDN." << std::endl;
 	std::string line;

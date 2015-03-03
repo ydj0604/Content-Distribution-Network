@@ -2,7 +2,6 @@
 #define SHARED_H
 
 #define CDN_DIR "cache"
-#define CDN_ADDR "http://localhost:4000"
 
 #include <utility>
 #include <string>

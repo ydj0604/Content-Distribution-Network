@@ -18,8 +18,9 @@
 using namespace std;
 
 
-CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
+CDN_Node::CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr) {
 	make_storage();
+	m_cdnIpAddr = cdnIpAddr;
 	m_metaIpAddr = metaIpAddr;
 	m_fssIpAddr = fssIpAddr;
 	m_sender = new CDNSender(metaIpAddr, fssIpAddr);
@@ -27,6 +28,13 @@ CDN_Node::CDN_Node(string metaIpAddr, string fssIpAddr) {
     get_address(); // initialize cdn address
     m_cdnId = -1;
     m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
+
+    cout<<"CDN Public IP Addr: "<<m_address.ipAddr<<endl;
+    cout<<"CDN Lat: "<<m_address.latLng.first<<" ";
+    cout<<"CDN Lng: "<<m_address.latLng.second<<endl;
+    cout<<"CDN Addr: " + metaIpAddr<<endl;
+    cout<<"Meta Addr: " + metaIpAddr<<endl;
+    cout<<"FSS Addr: " + fssIpAddr<<endl;
 }
 
 CDN_Node::~CDN_Node() {
@@ -45,10 +53,6 @@ void CDN_Node::get_address() {
     
     m_address.latLng.first = cdn_gps.first;
     m_address.latLng.second = cdn_gps.second;
-
-    cout<<"CDN IpAddr: "<<m_address.ipAddr<<endl;
-    cout<<"CDN Lat: "<<m_address.latLng.first<<" ";
-    cout<<"CDN Lng: "<<m_address.latLng.second<<endl;
 }
 
 //TODO: take relative file path instead of file name as the first argument !!
@@ -174,7 +178,7 @@ char* CDN_Node::path_maker(const char* name){
 }
 
 void CDN_Node::startListening(){
-	CDNReceiver::initialize(U(CDN_ADDR), this);
+	CDNReceiver::initialize(U(m_cdnIpAddr), this);
 }
 
 void CDN_Node::endListening(){

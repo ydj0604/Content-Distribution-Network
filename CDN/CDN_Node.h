@@ -19,7 +19,7 @@ using namespace std;
 class CDN_Node {
 public:
     
-	CDN_Node(string metaIpAddr, string fssIpAddr);
+	CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr);
 	~CDN_Node();
     
 	//utility functions
@@ -64,8 +64,9 @@ private:
     //added
     int m_cdnId;
     Address m_address;
-    string m_metaIpAddr;
-    string m_fssIpAddr;
+    string m_metaIpAddr; //including port
+    string m_fssIpAddr; //including port
+    string m_cdnIpAddr; //including port
     CDNSender* m_sender;
 	
 };
