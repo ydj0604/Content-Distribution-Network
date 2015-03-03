@@ -11,7 +11,7 @@ using namespace http;
 using namespace web::http::experimental::listener;
 
 #define FSS_ADDR "http://localhost:5000/"
-#define FSS_DIR "FSS_Storage"
+#define FSS_DIR "./FSS_Storage"
 
 class FSS {
 public:
