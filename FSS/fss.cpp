@@ -1,6 +1,7 @@
 #include "fss.h"
 #include "cpprest/http_listener.h"
 #include "cpprest/http_client.h"
+#include "../ipToLatLng/ipToLatLng.h"
 #include <iostream>
 #include <stdlib.h> // for system calls
 
@@ -13,6 +14,17 @@ using namespace web::http::experimental::listener;
 using namespace web::http::client;
 
 FSS::FSS(string metaIpAddrPort) {
+  // get the ip_address of the client and lat/lng
+  // Get client ip instance
+  ip_instance = new ipToLatLng();
+  fss_ipport = ip_instance->getipaddr();
+
+  // use GET http request to retrieve client's latitude/longitude
+  ip_instance->IPJsonToLatLng( fss_ipport );
+  fss_lat = ip_instance->getlat();
+  fss_lng = ip_instance->getlng();
+
+  // Start communication for FSS
   uri_builder getUri(FSS_ADDR);
   getUri.append_path("get");
   get_listener = http_listener(getUri.to_uri().to_string());
@@ -26,6 +38,8 @@ FSS::FSS(string metaIpAddrPort) {
 
   m_metaIpAddrPort = metaIpAddrPort;
   register_with_meta(); //send register msg to meta
+
+
 }
 
 FSS::~FSS() {
