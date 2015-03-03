@@ -20,12 +20,15 @@ using namespace std;
 
 CDN_Node::CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr) {
 	make_storage();
-	m_cdnIpAddr = cdnIpAddr;
 	m_metaIpAddr = metaIpAddr;
 	m_fssIpAddr = fssIpAddr;
 	m_sender = new CDNSender(metaIpAddr, fssIpAddr);
 	m_sender->setCDN(this);
-    get_address(); // initialize cdn address
+
+    //get_address(); // initialize cdn address !!!!!! NEED TO CHANGE
+	m_address.ipAddr = cdnIpAddr;
+	m_address.latLng = make_pair(47.61, -122.33); //seattle location
+
     m_cdnId = -1;
     m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
 
@@ -42,7 +45,7 @@ CDN_Node::~CDN_Node() {
 }
 
 void CDN_Node::startListening(){
-	CDNReceiver::initialize(U("http://"+m_cdnIpAddr), this);
+	CDNReceiver::initialize(U("http://"+m_address.ipAddr), this);
 }
 
 void CDN_Node::endListening(){

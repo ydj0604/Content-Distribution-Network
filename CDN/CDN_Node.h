@@ -46,7 +46,6 @@ public:
     //gps functions
     void get_and_set_CDN_addr();
     pair <double, double> get_gps_info ();
-
 private:
 
     DIR *dir;
@@ -66,7 +65,6 @@ private:
     Address m_address;
     string m_metaIpAddr; //including port
     string m_fssIpAddr; //including port
-    string m_cdnIpAddr; //including port
     CDNSender* m_sender;
 	
 };

@@ -17,7 +17,7 @@ using namespace utility;
 using namespace concurrency;
 
 int main(int argc, char *argv[]) {
-	string cdnIpAddr = "localhost:4000", metaIpAddr="localhost:5000", fssIpAddr="localhost:6000";
+	string cdnIpAddr = "localhost:6000", metaIpAddr="localhost:4000", fssIpAddr="localhost:5000";
 	if(argc > 3) {
 		string temp(argv[1]);
 		cdnIpAddr = temp;
