@@ -294,12 +294,12 @@ int MetaServer::deleteMetaEntry(string fileName) {
 	string newFileName = m_file+"_v" + char('0'+m_version);
 	ifstream fileIn(currFileName.c_str());
 	if(!fileIn) {
-		cout<<"MetaServer::deleteMetaEntry - file not opened"<<endl;
+		cout<<"MetaServer::deleteMetaEntry - file not opened " + currFileName<<endl;
 		return -1;
 	}
 	ofstream fileOut(newFileName.c_str());
 	if(!fileOut) {
-		cout<<"MetaServer::deleteMetaEntry - file not opened"<<endl;
+		cout<<"MetaServer::deleteMetaEntry - file not opened " + newFileName<<endl;
 		fileIn.close();
 		return -1;
 	}
@@ -334,7 +334,7 @@ bool MetaServer::doesExist(string fileName) {
 	string currFileName = m_file+"_v" + char('0'+m_version);
 	ifstream fileIn(currFileName.c_str());
 	if(!fileIn.is_open()) {
-		cout<<"MetaServer::doesExist - file not opened"<<endl;
+		//cout<<"MetaServer::doesExist - file not opened " + currFileName <<endl;
 		return false;
 	}
 	bool found = false;
@@ -358,7 +358,7 @@ int MetaServer::addNewMetaEntry(string fileName, const string& fileHash, const v
 	string currFileName = m_file+"_v" + char('0'+m_version);
 	ofstream file(currFileName.c_str(), ios_base::app | ios_base::out);
 	if(!file.is_open()) {
-		cout<<"MetaServer::addNewMetaEntry - file not opened"<<endl;
+		cout<<"MetaServer::addNewMetaEntry - file not opened " + currFileName<<endl;
 		return -1;
 	}
 	string lineToAdd = constructLine(fileName, fileHash, cdnIdList);
@@ -368,6 +368,9 @@ int MetaServer::addNewMetaEntry(string fileName, const string& fileHash, const v
 }
 
 int MetaServer::updateMetaEntry(string fileName, const string& fileHash, const vector<int>& cdnIdList) {
+	if(!doesExist(fileName)) {
+		return addNewMetaEntry(fileName, fileHash, cdnIdList);
+	}
 	if(deleteMetaEntry(fileName) != 0)
 		return -1;
 	if(addNewMetaEntry(fileName, fileHash, cdnIdList) != 0)
@@ -381,12 +384,12 @@ int MetaServer::addCdnToMetaEntry(string fileName, int cdnId) {
 	string newFileName = m_file+"_v" + char('0'+m_version);
 	ifstream fileIn(currFileName.c_str());
 	if(!fileIn) {
-		cout<<"MetaServer::addCdnToMetaEntry - file not opened"<<endl;
+		cout<<"MetaServer::addCdnToMetaEntry - file not opened " + currFileName<<endl;
 		return -1;
 	}
 	ofstream fileOut(newFileName.c_str());
 	if(!fileOut) {
-		cout<<"MetaServer::addCdnToMetaEntry - file not opened"<<endl;
+		cout<<"MetaServer::addCdnToMetaEntry - file not opened " + newFileName<<endl;
 		fileIn.close();
 		return -1;
 	}
@@ -427,12 +430,12 @@ int MetaServer::deleteCdnFromMetaEntry(string fileName, int cdnId) {
 	string newFileName = m_file+"_v" + char('0'+m_version);
 	ifstream fileIn(currFileName.c_str());
 	if(!fileIn) {
-		cout<<"MetaServer::deleteCdnFromMetaEntry - file not opened"<<endl;
+		cout<<"MetaServer::deleteCdnFromMetaEntry - file not opened " + currFileName<<endl;
 		return -1;
 	}
 	ofstream fileOut(newFileName.c_str());
 	if(!fileOut) {
-		cout<<"MetaServer::deleteCdnFromMetaEntry - file not opened"<<endl;
+		cout<<"MetaServer::deleteCdnFromMetaEntry - file not opened " + newFileName<<endl;
 		fileIn.close();
 		return -1;
 	}

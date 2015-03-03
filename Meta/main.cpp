@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 		originIpAddrPort = temp1;
 	}
 	OriginServer* origin = new OriginServer(originIpAddrPort);
-	MetaServer* meta = new MetaServer(metaIpAddrPort, "MetaDataFile", origin);
+	MetaServer* meta = new MetaServer(metaIpAddrPort, "metaFile", origin);
 	origin->setMeta(meta);
 	origin->startListening();
 	meta->startListening();

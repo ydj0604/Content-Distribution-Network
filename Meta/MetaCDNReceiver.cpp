@@ -72,11 +72,10 @@ void MetaCDNReceiver::handle_update(http_request message) {
 	*/
 
 	try {
-
-		cout << endl << "---------------"<< endl;
-		cout << message.to_string() << endl <<endl;
-
 		if(message.headers().content_type()==U("application/json")) {
+			cout << endl << "---------------"<< endl;
+			cout << message.to_string() << endl <<endl;
+
 			json::value jsonObj = message.extract_json().get();
 			int cdnId = jsonObj.at(U("CdnId")).as_integer();
 			string fileName = utility::conversions::to_utf8string(jsonObj.at(U("FileName")).as_string());
@@ -144,11 +143,11 @@ void MetaCDNReceiver::handle_delete(http_request message) {
 	Response: status OK or Forbidden (no json object included)
 	*/
 	try {
-		cout << endl << "---------------"<< endl;
-		cout << message.to_string() << endl <<endl;
-
 		int result;
 		if(message.headers().content_type()==U("application/json")) {
+			cout << endl << "---------------"<< endl;
+			cout << message.to_string() << endl <<endl;
+
 			json::value jsonObj = message.extract_json().get();
 			int cdnId = jsonObj.at(U("CdnId")).as_integer();
 			string fileName = utility::conversions::to_utf8string(jsonObj.at(U("FileName")).as_string());
@@ -182,11 +181,12 @@ void MetaCDNReceiver::handle_register(http_request message) {
 
 	*/
 	try {
-		cout << endl << "---------------"<< endl;
-		cout << message.to_string() << endl <<endl;
 
 		int assignedId = -1;
 		if(message.headers().content_type()==U("application/json")) {
+			cout << endl << "---------------"<< endl;
+			cout << message.to_string() << endl <<endl;
+
 			json::value jsonObj = message.extract_json().get();
 			if(jsonObj.at(U("Type")).as_integer() == 0) {
 				string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
