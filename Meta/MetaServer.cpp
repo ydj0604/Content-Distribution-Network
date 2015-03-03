@@ -1,6 +1,5 @@
 #include "MetaServer.h"
 #include "MetaCDNReceiver.h"
-#include "MetaCDNSender.h"
 #include "../Origin/OriginServer.h"
 #include "../Shared.h"
 #include <unordered_map>
@@ -22,7 +21,7 @@ using namespace http;
 using namespace web::http::experimental::listener;
 using namespace json;
 
-MetaServer::MetaServer(string file, OriginServer* origin) {
+MetaServer::MetaServer(string metaIpAddrPort, string file, OriginServer* origin) {
 	for(int i=0; i<file.size(); i++)
 		if(file[i]==' ') {
 			cout<<"MetaServer::MetaServer - file name can't contain a space"<<endl;
@@ -35,6 +34,7 @@ MetaServer::MetaServer(string file, OriginServer* origin) {
 	m_version = 0;
 	m_version_timestamp = 0;
 	m_origin = origin;
+	m_metaIpAddrPort = metaIpAddrPort;
 	m_nextCDNId = 0;
 }
 
@@ -43,10 +43,10 @@ MetaServer::~MetaServer() {
 }
 
 void MetaServer::startListening() {
-	utility::string_t port = U("5000");
-	utility::string_t address = U("http://localhost:");
-	address.append(port);
-	MetaCDNReceiver::initialize(address, this);
+	//utility::string_t port = U("5000");
+	//utility::string_t address = U("http://localhost:");
+	//address.append(port);
+	MetaCDNReceiver::initialize("http://" + m_metaIpAddrPort, this);
 }
 
 void MetaServer::endListening() {
@@ -68,6 +68,16 @@ int MetaServer::unregisterCdn(int cdnId) { //returns return status
 		return -1;
 	m_cdnIdToAddrMap.erase(cdnId);
 	return 0;
+}
+
+vector<Address> MetaServer::getCdnAddrs() {
+	vector<Address> resultVec;
+	unordered_map<int, Address>::iterator itr = m_cdnIdToAddrMap.begin();
+	while(itr != m_cdnIdToAddrMap.end()) {
+		resultVec.push_back(itr->second);
+		++itr;
+	}
+	return resultVec;
 }
 
 /*------------------*/

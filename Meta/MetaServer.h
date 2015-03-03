@@ -17,13 +17,15 @@ typedef struct Address Address;
 class MetaServer {
 public:
 	//basic functions
-	MetaServer(string file, OriginServer* origin);
+	MetaServer(string metaIpAddrPort, string file, OriginServer* origin);
 	~MetaServer();
 	void startListening();
 	void endListening();
 	int setFssAddr(Address fss);
 	int registerCdn(Address cdn);
 	int unregisterCdn(int cdnId);
+	vector<Address> getCdnAddrs();
+	const unordered_map<int, Address>& getCdnIdToAddrMap() { return m_cdnIdToAddrMap; }
 
 	//helper functions
 	double calculateDistance(Address addr1, Address addr2);
@@ -52,17 +54,21 @@ public:
 	int addNewTimeStamp(string fileName, long long timeStamp);
 	int deleteTimeStamp(string fileName);
 
+
+
+
 private:
 	void updateVersion();
 	void updateVersion_timestamp();
+	string m_metaIpAddrPort; //ex: 1.1.1.1:3000
 	string m_file; //currently MetaServer writes everyghing to one file; we can improve the performance later (by indexing...etc)
 	string m_file_timestamp;
 	int m_version;
 	int m_version_timestamp;
 	int m_nextCDNId;
-	unordered_map<int, Address> m_cdnIdToAddrMap; //key=id
 	Address m_FssAddr;
 	OriginServer* m_origin;
+	unordered_map<int, Address> m_cdnIdToAddrMap; //key=id val=ipaddr:port
 };
 
 #endif

@@ -13,7 +13,7 @@ using namespace std;
 
 class OriginServer {
 public:
-	OriginServer(MetaServer* meta=NULL);
+	OriginServer(string originIpAddrPort, MetaServer* meta=NULL);
 	~OriginServer();
 	void setMeta(MetaServer* meta);
 	void startListening();
@@ -24,6 +24,7 @@ public:
 
 private:
 	MetaServer* m_meta;
+	string m_originIpAddrPort;
 };
 
 #endif

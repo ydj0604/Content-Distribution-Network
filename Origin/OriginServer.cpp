@@ -1,14 +1,14 @@
 #include "OriginServer.h"
 #include "OriginClientReceiver.h"
-#include "OriginClientSender.h"
 #include "../Meta/MetaServer.h"
 #include "../Shared.h"
 #include "cpprest/http_listener.h"
 #include <iostream>
 using namespace std;
 
-OriginServer::OriginServer(MetaServer* meta) {
+OriginServer::OriginServer(string originIpAddrPort, MetaServer* meta) {
 	m_meta = meta;
+	m_originIpAddrPort = originIpAddrPort;
 }
 
 OriginServer::~OriginServer() {
@@ -20,10 +20,10 @@ void OriginServer::setMeta(MetaServer* meta) {
 }
 
 void OriginServer::startListening() {
-	utility::string_t port = U("5000");
-	utility::string_t address = U("http://localhost:");
-	address.append(port);
-	OriginClientReceiver::initialize(address, this);
+	//utility::string_t port = U("5000");
+	//utility::string_t address = U("http://localhost:");
+	//address.append(port);
+	OriginClientReceiver::initialize("http://"+m_originIpAddrPort, this);
 }
 
 void OriginServer::endListening() {

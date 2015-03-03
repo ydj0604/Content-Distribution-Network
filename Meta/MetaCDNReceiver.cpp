@@ -1,4 +1,5 @@
 #include "cpprest/http_listener.h"
+#include "cpprest/http_client.h"
 #include "MetaCDNReceiver.h"
 #include <iostream>
 #include "MetaServer.h"
@@ -10,6 +11,7 @@ using namespace web;
 using namespace utility;
 using namespace http;
 using namespace web::http::experimental::listener;
+using namespace http::client;
 using namespace json;
 
 MetaCDNReceiver* MetaCDNReceiver::m_instance = NULL;
@@ -70,6 +72,10 @@ void MetaCDNReceiver::handle_update(http_request message) {
 	*/
 
 	try {
+
+		cout << endl << "---------------"<< endl;
+		cout << message.to_string() << endl <<endl;
+
 		if(message.headers().content_type()==U("application/json")) {
 			json::value jsonObj = message.extract_json().get();
 			int cdnId = jsonObj.at(U("CdnId")).as_integer();
@@ -85,7 +91,22 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				result = m_meta->updateMetaEntry(fileName, fileHash, newCdnList);
 				//if(result == 0)
 				//	result = m_meta->updateTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_integer());
-				//TODO : now send requests to rest of CDNS to invalidate !!
+
+				//now, send invalidation msgs to other cdns
+				unordered_map<int, Address>::const_iterator itr = m_meta->getCdnIdToAddrMap().begin();
+				while(itr != m_meta->getCdnIdToAddrMap().end()) {
+					if(itr->first == cdnId) {
+						++itr;
+						continue;
+					}
+					http_client cdn_client = http_client("http://" + itr->second.ipAddr);
+					http_response resp = cdn_client.request(methods::DEL, "cdn/cache/"+fileName).get();
+					if (resp.status_code() != status_codes::OK) {
+						cout<<"MetaCDNReceiver::handle_update() - failed to send invalidation message"<<endl;
+					}
+					++itr;
+				}
+
 			} else if(jsonObj.at(U("Type")).as_integer() == 2) {
 				string fileHash = utility::conversions::to_utf8string(jsonObj.at(U("FileHash")).as_string());
 				vector<int> newCdnList;
@@ -111,7 +132,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 void MetaCDNReceiver::handle_delete(http_request message) {
 	/*
 	Use cases:
-	1. when CDN deletes a file from itself to store some other file (syndown+syncup)
+	1. when CDN deletes a file from itself to store some other file because of its limited capacity
 
 	JSON Format
 	Request
@@ -123,6 +144,9 @@ void MetaCDNReceiver::handle_delete(http_request message) {
 	Response: status OK or Forbidden (no json object included)
 	*/
 	try {
+		cout << endl << "---------------"<< endl;
+		cout << message.to_string() << endl <<endl;
+
 		int result;
 		if(message.headers().content_type()==U("application/json")) {
 			json::value jsonObj = message.extract_json().get();
@@ -146,8 +170,8 @@ void MetaCDNReceiver::handle_register(http_request message) {
 	JSON Format
 	Request
 	{
-		"Type": 0, //optional for now
-		"IP": "1.1.1.1", //the sender CDN's IP address
+		"Type": 0, //0=for cdn, 1=for fss
+		"IP": "1.1.1.1:4000", //the sender CDN's IP address + port(listening to incoming requests)
 		"Lat": 23.00, //the sender CDN's location
 		"Lng": 148.12
 	}
@@ -158,16 +182,29 @@ void MetaCDNReceiver::handle_register(http_request message) {
 
 	*/
 	try {
+		cout << endl << "---------------"<< endl;
+		cout << message.to_string() << endl <<endl;
+
 		int assignedId = -1;
 		if(message.headers().content_type()==U("application/json")) {
 			json::value jsonObj = message.extract_json().get();
-			string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
-			//TODO: validate ip address
-			Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
-			assignedId = m_meta->registerCdn(cdnAddr);
-			json::value respFinal = json::value::object();
-			respFinal[U("CdnId")] = json::value::number(assignedId);
-			message.reply(assignedId!=-1? status_codes::OK : status_codes::NotFound, respFinal);
+			if(jsonObj.at(U("Type")).as_integer() == 0) {
+				string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
+				//TODO: validate ip address
+				Address cdnAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
+				assignedId = m_meta->registerCdn(cdnAddr);
+				json::value respFinal = json::value::object();
+				respFinal[U("CdnId")] = json::value::number(assignedId);
+				message.reply(assignedId!=-1? status_codes::OK : status_codes::NotFound, respFinal);
+			} else if(jsonObj.at(U("Type")).as_integer() == 1){
+				string ipAddr = utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string());
+				//TODO: validate ip address
+				Address fssAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), ipAddr);
+				m_meta->setFssAddr(fssAddr);
+				message.reply(status_codes::OK, "FSS registration complete");
+			} else {
+				message.reply(status_codes::Forbidden, U("Invalid type"));
+			}
 		} else {
 			message.reply(status_codes::Forbidden, U("Json object is required"));
 		}
