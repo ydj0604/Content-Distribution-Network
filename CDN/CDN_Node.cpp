@@ -41,6 +41,14 @@ CDN_Node::~CDN_Node() {
 	delete m_sender;
 }
 
+void CDN_Node::startListening(){
+	CDNReceiver::initialize(U("http://"+m_cdnIpAddr), this);
+}
+
+void CDN_Node::endListening(){
+	CDNReceiver::shutDown();
+}
+
 bool CDN_Node::make_storage() {
 	strcpy(wd, CDN_DIR);
 	mkdir(wd, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -175,14 +183,6 @@ char* CDN_Node::path_maker(const char* name){
     strcpy(path_file, wd);
     strcat(path_file, "/");
     return strcat(path_file, name);
-}
-
-void CDN_Node::startListening(){
-	CDNReceiver::initialize(U(m_cdnIpAddr), this);
-}
-
-void CDN_Node::endListening(){
-	CDNReceiver::shutDown();
 }
 
 /*
