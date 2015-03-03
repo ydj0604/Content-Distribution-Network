@@ -2,6 +2,7 @@
 #define CDN_FSS_H
 
 #include "cpprest/http_listener.h"
+#include "../ipToLatLng/ipToLatLng.h"
 
 using namespace std;
 using namespace web;
@@ -31,5 +32,6 @@ private:
   string fss_ipport;
   double fss_lat, fss_lng;
   string m_metaIpAddrPort;
+  ipToLatLng* ip_instance;
 };
 #endif

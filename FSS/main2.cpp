@@ -4,7 +4,7 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-	string metaAddr = "localhost:3000";
+	string metaAddr = "localhost:4000";
 	if(argc > 1) {
 		 string temp(argv[1]);
 		 metaAddr = temp;
