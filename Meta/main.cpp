@@ -39,7 +39,7 @@ void endToEndTest() {
 */
 
 int main(int argc, char *argv[]) {
-	string metaIpAddrPort = "localhost:5000", originIpAddrPort = "localhost:3000";
+	string metaIpAddrPort = "localhost:4000", originIpAddrPort = "localhost:3000";
 	if(argc > 2) {
 		string temp(argv[1]);
 		metaIpAddrPort = temp;
