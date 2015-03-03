@@ -22,7 +22,7 @@ CDN_Node::CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr) {
 	make_storage();
 	m_metaIpAddr = metaIpAddr;
 	m_fssIpAddr = fssIpAddr;
-	m_sender = new CDNSender(metaIpAddr, fssIpAddr);
+	m_sender = new CDNSender("http://"+metaIpAddr, "http://"+fssIpAddr);
 	m_sender->setCDN(this);
 
     //get_address(); // initialize cdn address !!!!!! NEED TO CHANGE
@@ -31,11 +31,11 @@ CDN_Node::CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr) {
 
     m_cdnId = -1;
     m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
+    cout<<"Registered ID: "<<m_cdnId<<endl;
 
-    cout<<"CDN Public IP Addr: "<<m_address.ipAddr<<endl;
     cout<<"CDN Lat: "<<m_address.latLng.first<<" ";
     cout<<"CDN Lng: "<<m_address.latLng.second<<endl;
-    cout<<"CDN Addr: " + metaIpAddr<<endl;
+    cout<<"CDN Addr: " + m_address.ipAddr<<endl;
     cout<<"Meta Addr: " + metaIpAddr<<endl;
     cout<<"FSS Addr: " + fssIpAddr<<endl;
 }
