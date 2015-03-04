@@ -7,12 +7,15 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-  Client c = Client("http://localhost:5000/"); // initialize origin ip
+  cout << "INITIALIZING CLIENT" << endl;
+  Client c = Client("http://localhost:3000/"); // initialize origin ip
+
+  cout << endl;
 
   // baseDir set as arg2
   if (argc > 2)
     c.baseDir = argv[2];
-  printf("Using %s as base directory\n", c.baseDir.c_str());
+  printf("Base Dir: %s\n", c.baseDir.c_str());
 
   if (argc > 1) {
     if (strcmp(argv[1], "--download") == 0) {

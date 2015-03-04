@@ -69,14 +69,16 @@ void Client::syncDownload() {
   vector<FileInfo> files = getListOfFilesFromDirectory("");
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
+  cout << endl;
 
   // Compare with origin server
   vector<FileInfo> diffFiles = compareListOfFiles(files, 1);
-  cout << diffFiles.size() << endl;
 
   // For each file that needs to be updated, download
-  for(size_t i = 0; i < diffFiles.size();i ++)
+  for(size_t i = 0; i < diffFiles.size();i ++) {
+    printFileInfo(diffFiles[i]);
     downloadFile(diffFiles[i]);
+  }
 }
 
 void Client::syncUpload() {
@@ -84,6 +86,7 @@ void Client::syncUpload() {
   vector<FileInfo> files = getListOfFilesFromDirectory("");
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
+  cout << endl;
 
   // Compare with origin server
   vector<FileInfo> diffFiles = compareListOfFiles(files, 0);
@@ -126,7 +129,12 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
 
   // POST this json message to the origin to ask for which files need to be uploaded/downloaded
   // given the file list already in sync with FSS
-  http_response fileComp_resp = client.request( methods::POST, U("/origin/explicit/"), req_json ).get();
+  http_response fileComp_resp;
+  try {
+    fileComp_resp = client.request( methods::POST, U("/origin/explicit/"), req_json ).get();
+  } catch (const std::exception& e) {
+    cout << "ERROR: compare list of files, " << e.what() << endl;
+  }
 
   vector<FileInfo> diff_files;
 
