@@ -31,13 +31,37 @@ void printFileInfo(FileInfo f) {
 
 Client::Client() {
   baseDir = "./";
+
+  // get the ip_address of the client and lat/lng
+  // Get client ip instance
+  ip_instance = new ipToLatLng();
+  client_ip = ip_instance->getipaddr();
+
+  // use GET http request to retrieve client's latitude/longitude
+  ip_instance->IPJsonToLatLng( client_ip );
+  client_lat = ip_instance->getlat();
+  client_lng = ip_instance->getlng();
 }
 
 Client::Client( string orig_ip ) : m_orig_ip(orig_ip) {
   // store ip address of Origin
+
+  baseDir = "./";
+
+  // get the ip_address of the client and lat/lng
+  // Get client ip instance
+  ip_instance = new ipToLatLng();
+  client_ip = ip_instance->getipaddr();
+
+  // use GET http request to retrieve client's latitude/longitude
+  ip_instance->IPJsonToLatLng( client_ip );
+  client_lat = ip_instance->getlat();
+  client_lng = ip_instance->getlng();
 }
 
 Client::~Client() {
+  // delete the allocated ip_instance
+  delete ip_instance;
 }
 
 void Client::syncDownload() {
@@ -90,32 +114,19 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
   }
 
   // store this array in json object
+  // and also the IP, Lat, Lng
   req_json[U("FileList")] = req_fileList;
-
-  // Get client ip instance
-  ipToLatLng* ip_instance = new ipToLatLng();
-  client_ip = ip_instance->getipaddr();
-
-  // use POST http request to retrieve client's latitude/longitude
-  ip_instance->IPJsonToLatLng( client_ip );
-  client_lat = ip_instance->getlat();
-  client_lng = ip_instance->getlng();
-
-  // Now, store these in json object
   req_json[U("IP")] = json::value::string(U(client_ip));
   req_json[U("Lat")] = json::value::number(client_lat);
   req_json[U("Lng")] = json::value::number(client_lng);
 
   // request message should be directed to Origin IP address
   uri_builder origin_url(U(m_orig_ip));
-  origin_url.append_path(U("origin/explicit"));
-
   http_client client(origin_url.to_uri());	// create client object
 
   // POST this json message to the origin to ask for which files need to be uploaded/downloaded
   // given the file list already in sync with FSS
-  http_response fileComp_resp = client.request( methods::POST, "/", req_json ).get();
-  cout << fileComp_resp.to_string() << endl;
+  http_response fileComp_resp = client.request( methods::POST, U("/origin/explicit/"), req_json ).get();
 
   vector<FileInfo> diff_files;
 
@@ -132,13 +143,13 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
         fileNew.name = fileObj.at(U("Name")).as_string();
         fileNew.cdnAddr = fileObj.at(U("Address")).as_string();
 
-	// push the newly constructed file into the list of diff_files
+	      // push the newly constructed file into the list of diff_files
         diff_files.push_back(fileNew);
       }
     }
 
     else { // handle non-OK status codes
-
+        fprintf(stderr, "Response from Origin failed :(\n");
     }
   } catch ( json::json_exception &e ) {
       fprintf(stderr, "JSON object error: %s\n", e.what());

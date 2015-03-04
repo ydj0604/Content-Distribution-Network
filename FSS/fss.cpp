@@ -1,5 +1,8 @@
 #include "fss.h"
+#include <string>
 #include "cpprest/http_listener.h"
+#include "cpprest/http_client.h"
+#include "../ipToLatLng/ipToLatLng.h"
 #include <iostream>
 #include <stdlib.h> // for system calls
 
@@ -9,8 +12,25 @@ using namespace utility;
 using namespace http;
 using namespace json;
 using namespace web::http::experimental::listener;
+using namespace web::http::client;
 
-FSS::FSS() {
+FSS::FSS(string metaIpAddrPort) {
+  // get the ip_address of the client and lat/lng
+  // Get client ip instance
+
+  ip_instance = new ipToLatLng();
+  fss_ipport = ip_instance->getipaddr();
+
+  // use GET http request to retrieve client's latitude/longitude
+  ip_instance->IPJsonToLatLng( fss_ipport );
+  fss_lat = ip_instance->getlat();
+  fss_lng = ip_instance->getlng();
+
+  cout<<"FSS IP ADDR: " + fss_ipport<<endl;
+  cout<<"FSS LAT: " + to_string(fss_lat)<<endl;
+  cout<<"FSS LNG: " + to_string(fss_lng)<<endl;
+
+  // Start communication for FSS
   uri_builder getUri(FSS_ADDR);
   getUri.append_path("get");
   get_listener = http_listener(getUri.to_uri().to_string());
@@ -21,6 +41,11 @@ FSS::FSS() {
   postUri.append_path("post");
   post_listener = http_listener(postUri.to_uri().to_string());
   post_listener.support(methods::POST, std::bind(&FSS::handle_post, this, std::placeholders::_1));
+
+  m_metaIpAddrPort = metaIpAddrPort;
+  register_with_meta(); //send register msg to meta
+
+
 }
 
 FSS::~FSS() {
@@ -42,6 +67,21 @@ void FSS::listen() {
   } catch (exception const &e) {
     cout << e.what() << endl;
   }
+}
+
+void FSS::register_with_meta() {
+	http_client meta_client = http_client("http://"+m_metaIpAddrPort);
+
+	json::value jsonObj = json::value::object();
+	jsonObj[U("Type")] = json::value::number(1);
+	jsonObj[U("IP")] = json::value::string(U(fss_ipport));
+	jsonObj[U("Lat")] = json::value::number(fss_lat);
+	jsonObj[U("Lng")] = json::value::number(fss_lng);
+
+	http_response resp = meta_client.request(methods::POST, U("/meta/register/"), jsonObj).get();
+	if (resp.status_code() != status_codes::OK) {
+		cout<<"FSS::register_with_meta - registration failed"<<endl;
+	}
 }
 
 void FSS::handle_get(http_request message) {
