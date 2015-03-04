@@ -69,13 +69,16 @@ void Client::syncDownload() {
   vector<FileInfo> files = getListOfFilesFromDirectory("");
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
+  cout << endl;
 
   // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles(files, 0);
+  vector<FileInfo> diffFiles = compareListOfFiles(files, 1);
 
   // For each file that needs to be updated, download
-  for(size_t i = 0; i < diffFiles.size();i ++)
+  for(size_t i = 0; i < diffFiles.size();i ++) {
+    printFileInfo(diffFiles[i]);
     downloadFile(diffFiles[i]);
+  }
 }
 
 void Client::syncUpload() {
@@ -83,9 +86,10 @@ void Client::syncUpload() {
   vector<FileInfo> files = getListOfFilesFromDirectory("");
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
+  cout << endl;
 
   // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles(files, 1);
+  vector<FileInfo> diffFiles = compareListOfFiles(files, 0);
 
   // For each file that needs to be updated, upload
   for(size_t i = 0; i < diffFiles.size();i ++)
@@ -125,7 +129,12 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
 
   // POST this json message to the origin to ask for which files need to be uploaded/downloaded
   // given the file list already in sync with FSS
-  http_response fileComp_resp = client.request( methods::POST, U("/origin/explicit/"), req_json ).get();
+  http_response fileComp_resp;
+  try {
+    fileComp_resp = client.request( methods::POST, U("/origin/explicit/"), req_json ).get();
+  } catch (const std::exception& e) {
+    cout << "ERROR: compare list of files, " << e.what() << endl;
+  }
 
   vector<FileInfo> diff_files;
 
@@ -212,7 +221,7 @@ void Client::downloadFile(FileInfo f) {
 
   // request file f communication
   string cdn_address = "http://" + f.cdnAddr + "/";
-  http_client cdn_client = http_client("http://localhost:5000/get");
+  http_client cdn_client = http_client(cdn_address + "cdn/cache/");
   
   // Make request
   http_response response;
@@ -235,6 +244,7 @@ void Client::downloadFile(FileInfo f) {
     saveFile.close();
   } else {
     printf("FAILED TO DOWNLOAD\n");
+    cout << response.to_string() << endl;
   }
 }
 
@@ -250,18 +260,23 @@ void Client::uploadFile(FileInfo f) {
 
   // upload file to cdn node
   string cdn_address = "http://" + f.cdnAddr + "/";
-  http_client cdn_client = http_client("http://localhost:5000/post");
+  http_client cdn_client = http_client(cdn_address + "cdn/cache/");
   
   // Make request
   http_response response;
   try {
-    response = cdn_client.request(methods::POST, f.name, contents).get();
+    if (f.hash == "")
+      f.hash = hashFile(baseDir + f.name);
+
+    response = cdn_client.request(methods::PUT, f.name + "?" + f.hash, contents).get();
   } catch (const std::exception& e) {
     printf("ERROR, %s\n", e.what());
   }
   
   if (response.status_code() == status_codes::OK)
     printf("OK\n");
-  else
+  else {
     printf("FAILED TO UPLOAD\n");
+    cout << response.to_string() << endl;
+  }
 }

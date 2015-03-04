@@ -25,6 +25,7 @@ public:
   ~Client();
   void syncDownload();
   void syncUpload();
+  string baseDir;
 private:
   vector<FileInfo> compareListOfFiles(vector<FileInfo>& files, int type);
   vector<FileInfo> getListOfFilesFromDirectory(string subpath);
@@ -36,7 +37,6 @@ private:
   string client_ip;
   double client_lat, client_lng;
   string m_orig_ip;
-  string baseDir;
   
 };
 
