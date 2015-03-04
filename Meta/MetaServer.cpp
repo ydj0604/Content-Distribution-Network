@@ -199,7 +199,7 @@ vector< pair<string, Address> > MetaServer::processListFromOriginDownload(const 
 	vector< pair<string, Address> > result;
 	ifstream file;
 	string fileName = m_file+"_v" + char('0'+m_version);
-	file.open(fileName.c_str());
+	file.open(fileName.c_str(), ios_base::app | ios_base::in);
 	if(!file.is_open()) {
 		cout<<"MetaServer::processListFromOriginDownload - file not opened"<<endl;
 		exit(0);
@@ -238,7 +238,7 @@ vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const ve
 	vector< pair<string, Address> > result;
 	ifstream file;
 	string fileName = m_file+"_v" + char('0'+m_version);
-	file.open(fileName.c_str());
+	file.open(fileName.c_str(), ios_base::app | ios_base::in);
 	if(!file.is_open()) {
 		cout<<"MetaServer::processListFromOriginUpload - file not opened"<<endl;
 		exit(0);

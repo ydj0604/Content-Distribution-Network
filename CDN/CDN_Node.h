@@ -19,7 +19,7 @@ using namespace std;
 class CDN_Node {
 public:
     
-	CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr);
+	CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr, string city="la");
 	~CDN_Node();
     
 	//utility functions

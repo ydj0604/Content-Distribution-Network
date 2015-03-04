@@ -17,17 +17,46 @@
 
 using namespace std;
 
+/*
+ 	Address la_client(make_pair(34.05, -118.44), "0.0.0.0");
+	Address sf(make_pair(37.77, -122.42), "1.1.1.1");
+	Address seattle(make_pair(47.61, -122.33), "2.2.2.2");
+	Address bahama(make_pair(25.03, -77.40), "3.3.3.3");
+	Address northkorea(make_pair(40.34, 127.51), "4.4.4.4");
+	Address austin_fss(make_pair(30.27, -97.74), "255.255.255.255");
+ */
 
-CDN_Node::CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr) {
+
+CDN_Node::CDN_Node(string cdnIpAddr, string metaIpAddr, string fssIpAddr, string city) {
 	make_storage();
 	m_metaIpAddr = metaIpAddr;
 	m_fssIpAddr = fssIpAddr;
 	m_sender = new CDNSender("http://"+metaIpAddr, "http://"+fssIpAddr);
 	m_sender->setCDN(this);
 
-    //get_address(); // initialize cdn address !!!!!! NEED TO CHANGE
-	m_address.ipAddr = cdnIpAddr;
-	m_address.latLng = make_pair(47.61, -122.33); //seattle location
+	if(city=="la") {
+		m_address.ipAddr = cdnIpAddr;
+		m_address.latLng = make_pair(34.05, -118.44);
+	} else if(city=="sf") {
+		m_address.ipAddr = cdnIpAddr;
+		m_address.latLng = make_pair(37.77, -122.42);
+	} else if(city=="st") {
+		m_address.ipAddr = cdnIpAddr;
+		m_address.latLng = make_pair(47.61, -122.33);
+	} else if(city=="bh") {
+		m_address.ipAddr = cdnIpAddr;
+		m_address.latLng = make_pair(25.03, -77.40);
+	} else if(city=="nk") {
+		m_address.ipAddr = cdnIpAddr;
+		m_address.latLng = make_pair(40.34, 127.51);
+	} else if(city=="au") {
+		m_address.ipAddr = cdnIpAddr;
+		m_address.latLng = make_pair(30.27, -97.74);
+	} else {
+		get_address(); // initialize cdn address !!!!!! NEED TO CHANGE
+	}
+
+	this->get_size_of_storage();
 
     m_cdnId = -1;
     m_sender->sendRegisterMsgToMeta(m_address, m_cdnId);
@@ -105,8 +134,9 @@ bool CDN_Node::write_file(const string &contents, string filename, vector<string
     //Configure the storage's capacity and free some portion if exceeds and insert the new file information
     long long file_size = contents.size();
     
-    if(!managing_files(filename, file_size, deletedfiles))
+    if(!managing_files(filename, file_size, deletedfiles)) {
     	return false;
+    }
     
     //convert string to char
     const char* cstr = filename.c_str();
@@ -114,7 +144,7 @@ bool CDN_Node::write_file(const string &contents, string filename, vector<string
     strcpy(temp,path_maker(cstr));
     
     //Write to file
-    ofstream f (temp);
+    ofstream f (temp, ios_base::app | ios_base::out);
     if(f.is_open()){
         f << contents;
         f.close();
