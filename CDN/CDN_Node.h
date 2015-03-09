@@ -49,7 +49,9 @@ public:
 private:
 
     DIR *dir;
+    DIR* dir_2;
     struct dirent *ent;
+    struct dirent * ent_2;
     
     long long storage_capacity = 10000000; //the capacity is 10MB
 	long CDN_addr;	// CDN's IP address

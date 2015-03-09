@@ -1,7 +1,7 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#define CDN_DIR "cache"
+#define CDN_DIR "./cache"
 
 #include <utility>
 #include <string>

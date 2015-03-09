@@ -126,7 +126,7 @@ int CDNSender::getFileFromFSS(string fileName, int cdnId) {
 }
 
 int CDNSender::uploadFileToFSS(string fileName, const string& contents) {
-	http_response resp = m_fss_client.request(methods::POST, U("/post/"+fileName), contents).get();
+	http_response resp = m_fss_client.request(methods::POST, U("/post"+fileName), contents).get();
 	if(resp.status_code() != status_codes::OK) {
 		cout<<"CDNSender:uploadFileToFSS - failed to upload file"<<endl;
 		return -1;

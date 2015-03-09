@@ -102,9 +102,25 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 		
             If signal is 1, look up the file and remove it from the directory.
          */
-        
-            const char* cstr = filename.c_str();
-        
+    
+            //const char* cstr = filename.c_str();
+            string filepath = CDN_DIR + filename;
+            //if file is not exists, return false;
+            //if file is exists and signal is 0, return true
+            //if file is exists and signal is 1, remove it and return true
+            if(!ifstream(filepath)) {
+                cout << "Can't find the file" << endl;
+                return false;
+            }  else if(ifstream(filepath) && signal ==0) {
+                return true;
+            } else{
+                if(remove(filepath.c_str()) == 0) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        /*
 			if((dir = opendir(wd)) != NULL) {
 				while ((ent = readdir(dir)) != NULL) {
 					if (strcmp(ent->d_name,cstr)==0 && signal == 0) {
@@ -125,7 +141,7 @@ bool CDN_Node::look_up_and_remove_storage(string filename, int signal) {
 				perror("Can't open the working directory");
 				return false;
 			}
-
+         */
 			return false;
 }
 
@@ -137,14 +153,20 @@ bool CDN_Node::write_file(const string &contents, string filename, vector<string
     if(!managing_files(filename, file_size, deletedfiles)) {
     	return false;
     }
-    
+    /*
     //convert string to char
     const char* cstr = filename.c_str();
     char temp[256];
     strcpy(temp,path_maker(cstr));
+    */
+    string filepath = CDN_DIR + filename;
     
+    //create parent directories
+    string cmd = "mkdir -p $(dirname " + filepath + ")";
+    int ret = system(cmd.c_str());
+
     //Write to file
-    ofstream f (temp, ios_base::app | ios_base::out);
+    ofstream f(filepath.c_str());
     if(f.is_open()){
         f << contents;
         f.close();
@@ -156,11 +178,17 @@ bool CDN_Node::write_file(const string &contents, string filename, vector<string
 
 string CDN_Node::load_file(string filename) {
     //convert string to char
+    
+    /*
     const char* cstr = filename.c_str();
     char temp[256];
     strcpy(temp,path_maker(cstr));
     //Return contents of file
     ifstream f (temp);
+     */
+    string filepath = CDN_DIR + filename;
+    ifstream f(filepath.c_str());
+    
     if(f.is_open()) {
         //update cache information
         file_tracker.get(filename);
@@ -197,6 +225,7 @@ bool CDN_Node::delete_file(string filename){
 long long CDN_Node::get_size_of_storage() {
     size_of_storage = 0;
     struct stat sb;
+    /*
     if((dir = opendir(wd)) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             stat(path_maker(ent->d_name), &sb);
@@ -204,19 +233,49 @@ long long CDN_Node::get_size_of_storage() {
         }
         closedir (dir);
     } else {
-        /* can not open directory */
-        perror("Can't open the directory");
+                perror("Can't open the directory");
         return EXIT_FAILURE;
+    }*/
+    if((dir = opendir(CDN_DIR)) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            if( stat(path_maker(ent->d_name),&sb) == 0 )
+            {
+            
+                if( sb.st_mode & S_IFDIR && (string)ent->d_name != "." && (string)ent->d_name != ".." )
+                {
+                    //it's a directory
+                    cout << "directory: " << ent->d_name << endl;
+                    if((dir_2 = opendir(path_maker(ent->d_name))) ==NULL) {
+                        cout << "this directory can't be opened" << endl;
+                            break;
+                    }
+                    while((ent_2 = readdir(dir_2))!= NULL) {
+                        cout << "ent_2: " << ent_2->d_name << endl;
+                        stat(path_maker(ent_2->d_name), &sb);
+                        size_of_storage += (long long)sb.st_size;
+                    }
+                    closedir(dir_2);
+                }
+                else
+                {
+                    //it's a file
+                    cout << "file: " << ent->d_name << endl;
+                    size_of_storage += (long long)sb.st_size;
+                }
+                
+            }
+        }
+        closedir(dir);
+        }
+    else
+    {
+        //error
+         cout << "Can't read directory" << endl;
     }
+                
         return size_of_storage;
 }
 
-char* CDN_Node::path_maker(const char* name){
-    char path_file[256];
-    strcpy(path_file, wd);
-    strcat(path_file, "/");
-    return strcat(path_file, name);
-}
 
 /*
  Before get the gps information, we have to convert IP address into some certain numbers that fit into
@@ -323,7 +382,11 @@ pair <double, double> CDN_Node::get_gps_info (){
     return cdn_gps;
 }
 
-
-
+char* CDN_Node::path_maker(const char* name){
+	char path_file[256];
+	strcpy(path_file, wd);
+	strcat(path_file, "/");
+	return strcat(path_file, name);
+}
 
 
