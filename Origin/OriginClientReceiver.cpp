@@ -45,7 +45,7 @@ void OriginClientReceiver::handle_sync(http_request message) {
 	/* JSON Format
 	Request
 	{
-		"FileList": [{"Name": "a.txt" ,"Hash": "ahash", "TimeStamp": 123123}, {"Name": "b.txt" ,"Hash": "bhash", "TimeStamp": 123123}], //list of client's local files and hashes and time stamps
+		"FileList": [{"Name": "a.txt" ,"Hash": "ahash", "TimeStamp": "123123"}, {"Name": "b.txt" ,"Hash": "bhash", "TimeStamp": "123123"}], //list of client's local files and hashes and time stamps
 		"IP": "1.1.1.1", //the sender client's ip address
 		"Lat": 23.00, //the sender client's location
 		"Lng": 148.12
@@ -53,12 +53,76 @@ void OriginClientReceiver::handle_sync(http_request message) {
 
 	Response
 	{
-		"FileList": [{"Name": "a.txt" ,"Address": "1.1.1.1", "Type": "UPLOAD"}, {"Name": "b.txt" ,"Address": "2.2.2.2", "Type": "DOWNLOAD"}]
+		"FileList": [{"Name": "a.txt" ,"Address": "1.1.1.1", "Type": "UP"}, {"Name": "b.txt" ,"Address": "2.2.2.2", "Type": "DOWN"}]
 	}
 
-	Type: UPLOAD(client needs to upload the file), DOWNLOAD(client needs to download), DELETE(cleint needs to delete the file)
 	*/
-	message.reply(status_codes::OK, U("Hello World"));
+
+	try {
+		if(message.headers().content_type()==U("application/json")) {
+			//retrieve json object
+			json::value jsonObj = message.extract_json().get();
+			Address clientAddr(make_pair(jsonObj.at(U("Lat")).as_double(), jsonObj.at(U("Lng")).as_double()), utility::conversions::to_utf8string(jsonObj.at(U("IP")).as_string()));
+			json::value& list = jsonObj.at(U("FileList"));
+
+			//store file list into useful data structures
+			unordered_map<string, string> clientFileNameToHashMap;
+			vector< pair<string, string> > clientListTS; // <filename, file timestamp>
+			for(auto& fileObj : list.as_array()) {
+				clientListTS.push_back(make_pair(fileObj.at(U("Name")).as_string(), fileObj.at(U("TimeStamp")).as_string()));
+				clientFileNameToHashMap[fileObj.at(U("Name")).as_string()] = fileObj.at(U("Hash")).as_string();
+			}
+
+			//get which files to upload and which files to download
+			vector<string> uploadFileList, downloadFileList;
+			if(m_origin->getListForSync(clientListTS, uploadFileList, downloadFileList)!=0) {
+				message.reply(status_codes::NotFound, U("failure to get the list for sync"));
+				return;
+			}
+
+			//construct vectors to be used vec<<file name, file hash>>
+			vector< pair<string, string> > upVec, downVec;
+			for(int i=0; i<uploadFileList.size(); i++) {
+				upVec.push_back(make_pair(uploadFileList[i], clientFileNameToHashMap[uploadFileList[i]]));
+			}
+			for(int i=0; i<downloadFileList.size(); i++) {
+				downVec.push_back(make_pair(downloadFileList[i], clientFileNameToHashMap[downloadFileList[i]]));
+			}
+
+			//get the address for each file to upload/download
+			vector< pair<string, Address> > resultUploadList, resultDownloadList; //<file name, address>
+			resultUploadList = m_origin->getListOfFilesUpload(upVec, clientAddr, true);
+			resultDownloadList = m_origin->getListOfFilesDownload(downVec, clientAddr, true);
+
+			//prepare response
+			json::value respList = json::value::array();
+			for(int i=0; i<resultUploadList.size(); i++) {
+				json::value currFileObj = json::value::object();
+				currFileObj[U("Name")] = json::value::string(U(resultUploadList[i].first));
+				currFileObj[U("Address")] = json::value::string(U(resultUploadList[i].second.ipAddr));
+				currFileObj[U("Type")] = json::value::string(U("UP"));
+				respList[i] = currFileObj;
+			}
+			for(int i=0; i<resultDownloadList.size(); i++) {
+				json::value currFileObj = json::value::object();
+				currFileObj[U("Name")] = json::value::string(U(resultDownloadList[i].first));
+				currFileObj[U("Address")] = json::value::string(U(resultDownloadList[i].second.ipAddr));
+				currFileObj[U("Type")] = json::value::string(U("DOWN"));
+				respList[resultUploadList.size()+i] = currFileObj;
+			}
+			json::value respFinal = json::value::object();
+			respFinal[U("FileList")] = respList;
+
+			//return the response
+			message.reply(status_codes::OK, respFinal);
+		} else {
+			message.reply(status_codes::Forbidden, U("Json object is required"));
+		}
+	} catch(json::json_exception &e) {
+		message.reply(status_codes::Forbidden, U("Invalid json object"));
+		return;
+	}
+
 }
 
 void OriginClientReceiver::handle_explicit(http_request message) {

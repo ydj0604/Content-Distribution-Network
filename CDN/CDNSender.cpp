@@ -35,12 +35,15 @@ int CDNSender::sendCacheUpdateMsgToMeta(string fileName, int cdnId) {
 	}
 }
 
-int CDNSender::sendFileUpdateMsgToMeta(string fileName, string fileHash, int cdnId) {
+
+//timestamp needed
+int CDNSender::sendFileUpdateMsgToMeta(string fileName, string fileHash, int cdnId, string timeStamp) {
 	json::value jsonObj = json::value::object();
 	jsonObj[U("Type")] = json::value::number(1);
 	jsonObj[U("FileName")] = json::value::string(U(fileName));
 	jsonObj[U("FileHash")] = json::value::string(U(fileHash));
 	jsonObj[U("CdnId")] = json::value::number(cdnId);
+	jsonObj[U("TimeStamp")] = json::value::string(U(timeStamp));
 	http_response resp = m_meta_client.request(methods::POST, U("/meta/update/"), jsonObj).get();
 
 	if(resp.status_code() == status_codes::OK)
@@ -51,12 +54,14 @@ int CDNSender::sendFileUpdateMsgToMeta(string fileName, string fileHash, int cdn
 	}
 }
 
-int CDNSender::sendNewFileMsgToMeta(string fileName, string fileHash, int cdnId) {
+//timestamp needed
+int CDNSender::sendNewFileMsgToMeta(string fileName, string fileHash, int cdnId, string timeStamp) {
 	json::value jsonObj = json::value::object();
 	jsonObj[U("Type")] = json::value::number(2);
 	jsonObj[U("FileName")] = json::value::string(U(fileName));
 	jsonObj[U("FileHash")] = json::value::string(U(fileHash));
 	jsonObj[U("CdnId")] = json::value::number(cdnId);
+	jsonObj[U("TimeStamp")] = json::value::string(U(timeStamp));
 	http_response resp = m_meta_client.request(methods::POST, U("/meta/update/"), jsonObj).get();
 
 	if(resp.status_code() == status_codes::OK)

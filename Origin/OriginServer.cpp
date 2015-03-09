@@ -30,17 +30,20 @@ void OriginServer::endListening() {
 	OriginClientReceiver::shutDown();
 }
 
-vector< pair<string, Address> > OriginServer::getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr) {
-	vector< pair<string, Address> > result = m_meta->processListFromOriginDownload(listFromClientApp, clientAddr);
+//vector<<file name, file hash>> for input list
+vector< pair<string, Address> > OriginServer::getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr, bool sharedOnly) {
+	vector< pair<string, Address> > result = m_meta->processListFromOriginDownload(listFromClientApp, clientAddr, sharedOnly);
 	return result;
 }
 
-vector< pair<string, Address> > OriginServer::getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr) {
-	vector< pair<string, Address> > result = m_meta->processListFromOriginUpload(listFromClientApp, clientAddr);
+vector< pair<string, Address> > OriginServer::getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr, bool sharedOnly) {
+	vector< pair<string, Address> > result = m_meta->processListFromOriginUpload(listFromClientApp, clientAddr, sharedOnly);
 	return result;
 }
 
-int OriginServer::getListForSync(const vector< pair<string, long long> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList, vector<string>& deleteList) {
-	int result = m_meta->processSyncWithTimeStamp(clientFileList, uploadList, downloadList, deleteList);
+
+//vector<<file name, file time stamp>> for input list
+int OriginServer::getListForSync(const vector< pair<string, string> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList) {
+	int result = m_meta->processSyncWithTimeStamp(clientFileList, uploadList, downloadList);
 	return result;
 }

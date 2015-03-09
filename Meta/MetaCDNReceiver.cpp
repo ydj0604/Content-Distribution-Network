@@ -54,9 +54,9 @@ void MetaCDNReceiver::shutDown() {
 void MetaCDNReceiver::handle_update(http_request message) {
 	/*
 	Use cases:
-	1. when CDN pulls a file from FSS (syncdown flow)
-	2. when CDN updates an existing file (syncup flow; need invalidation process)
-	3. when CDN creates a new file and stores in FSS and itself
+	0. when CDN pulls a file from FSS (syncdown flow)
+	1. when CDN updates an existing file (syncup flow; need invalidation process)
+	2. when CDN creates a new file and stores in FSS and itself
 
 	JSON Format
 	Request
@@ -65,7 +65,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 		"FileName": "a.txt",
 		"FileHash": "ahash", //could be empty string when Type=0 //only for type 1,2
 		"CdnId": 1
-		"TimeStamp": 12312312312 //optional for now
+		"TimeStamp": "12312312312" //REQUIRED for use case 1 and 2
 	}
 
 	Response: status OK or Forbidden (no json object included)
@@ -88,8 +88,8 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				vector<int> newCdnList;
 				newCdnList.push_back(cdnId);
 				result = m_meta->updateMetaEntry(fileName, fileHash, newCdnList);
-				//if(result == 0)
-				//	result = m_meta->updateTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_integer());
+				if(result == 0)
+					result = m_meta->updateTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_string());
 
 				//now, send invalidation msgs to other cdns
 				unordered_map<int, Address>::const_iterator itr = m_meta->getCdnIdToAddrMap().begin();
@@ -111,8 +111,8 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				vector<int> newCdnList;
 				newCdnList.push_back(cdnId);
 				result = m_meta->addNewMetaEntry(fileName, fileHash, newCdnList);
-				//if(result == 0)
-				//	result = m_meta->addNewTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_integer());
+				if(result == 0)
+					result = m_meta->addNewTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_string());
 			} else {
 				message.reply(status_codes::Forbidden, U("Undefined Type"));
 				return;

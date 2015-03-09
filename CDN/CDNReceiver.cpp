@@ -111,17 +111,32 @@ void CDNReceiver::handle_get(http_request message) {
     */
 }
 
+
+//it has to take TIME STAMP for real-time sync
 void CDNReceiver::handle_put(http_request message) {
 	/*
-	 * http://localhost:4000/cdn/cache/filename?filehash <PUT>
+	 * http://localhost:4000/cdn/cache/filename?filehash&timestamp <PUT>
 	 * {
 	 * 		Body: contents
 	 * }
 	 */
 
 	string fileName = message.relative_uri().path();
-	string fileHash = message.relative_uri().query();
-	string contents = message.extract_string().get();
+	string queryStr = message.relative_uri().query();
+	string contents = message.extract_string().get(), fileHash="", timeStamp="";
+
+	//retrieve file hash and time stamp from query parameter
+	bool firstPart = true;
+	for(int i=0; i<queryStr.size(); i++) {
+		if(queryStr[i]=='&') {
+			firstPart = false;
+			continue;
+		} else if(firstPart) {
+			fileHash += queryStr[i];
+		} else {
+			timeStamp += queryStr[i];
+		}
+	}
 
 	cout << endl << "---------------"<< endl;
 	cout << fileName << endl;
@@ -145,9 +160,9 @@ void CDNReceiver::handle_put(http_request message) {
 	}
 
 	//update meta server when everything is done properly
-	sender->sendFileUpdateMsgToMeta(fileName, fileHash, m_cdn->get_cdn_id());
-	sender->sendCacheUpdateMsgToMeta(fileName, m_cdn->get_cdn_id());
-	message.reply(status_codes::OK, fileName + ": " + fileHash); //testing purpose
+	sender->sendFileUpdateMsgToMeta(fileName, fileHash, m_cdn->get_cdn_id(), timeStamp);
+	//sender->sendCacheUpdateMsgToMeta(fileName, m_cdn->get_cdn_id());
+	message.reply(status_codes::OK, fileName + ": " + fileHash + ", " + timeStamp); //testing purpose
 }
 
 

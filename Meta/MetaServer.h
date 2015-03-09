@@ -36,8 +36,8 @@ public:
 	bool isCDN_closerThanFSS(int cdnId, Address clientAddr);
 	bool CDN_load_OK(int cdnId);
 
-	vector< pair<string, Address> > processListFromOriginDownload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
-	vector< pair<string, Address> > processListFromOriginUpload(const vector< pair<string, string> >& clientFileList, Address clientAddr);
+	vector< pair<string, Address> > processListFromOriginDownload(const vector< pair<string, string> >& clientFileList, Address clientAddr, bool sharedOnly=false);
+	vector< pair<string, Address> > processListFromOriginUpload(const vector< pair<string, string> >& clientFileList, Address clientAddr, bool sharedOnly=false);
 
 	//functions for communication with CDN
 	bool doesExist(string fileName);
@@ -48,10 +48,10 @@ public:
 	int deleteCdnFromMetaEntry(string fileName, int cdnId);
 
 	//functions for timestamp management
-	int processSyncWithTimeStamp(const vector< pair<string, long long> >& clientFileList,
-								 vector<string>& uploadList, vector<string>& downloadList, vector<string>& deleteList);
-	int updateTimeStamp(string fileName, long long timeStamp);
-	int addNewTimeStamp(string fileName, long long timeStamp);
+	int processSyncWithTimeStamp(const vector< pair<string, string> >& clientFileList,
+								 vector<string>& uploadList, vector<string>& downloadList);
+	int updateTimeStamp(string fileName, string timeStamp);
+	int addNewTimeStamp(string fileName, string timeStamp);
 	int deleteTimeStamp(string fileName);
 
 

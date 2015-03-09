@@ -195,7 +195,7 @@ bool MetaServer::isCDN_closerThanFSS(int cdnId, Address clientAddr) {
 	return distToCDN <= distToFSS;
 }
 
-vector< pair<string, Address> > MetaServer::processListFromOriginDownload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr) {
+vector< pair<string, Address> > MetaServer::processListFromOriginDownload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr, bool sharedOnly) {
 	vector< pair<string, Address> > result;
 	ifstream file;
 	string fileName = m_file+"_v" + char('0'+m_version);
@@ -214,6 +214,12 @@ vector< pair<string, Address> > MetaServer::processListFromOriginDownload(const 
 		string fileName="", fileHash="";
 		vector<int> cdnsThatContainFile;
 		parseLine(currLine, fileName, fileHash, cdnsThatContainFile);
+
+		if(clientNameToHashMap.count(fileName)>0) //debug
+			cout<<clientNameToHashMap[fileName]<<" : "<<fileHash<<endl;
+
+		if(sharedOnly==true && clientNameToHashMap.count(fileName)==0) //if client doesn't have and sharedOnly is true, don't add it to the result list
+			continue;
 		if(clientNameToHashMap.count(fileName)>0 && clientNameToHashMap[fileName]==fileHash) //no need to download since name and hash match
 			continue;
 		int candidateCdnId = getClosestCDN(cdnsThatContainFile, clientAddr);
@@ -234,7 +240,7 @@ vector< pair<string, Address> > MetaServer::processListFromOriginDownload(const 
 	return result;
 }
 
-vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr) {
+vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr, bool sharedOnly) {
 	vector< pair<string, Address> > result;
 	ifstream file;
 	string fileName = m_file+"_v" + char('0'+m_version);
@@ -263,6 +269,10 @@ vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const ve
 		string fileName="", fileHash="";
 		vector<int> cdnsThatContainFile;
 		parseLine(currLine, fileName, fileHash, cdnsThatContainFile);
+
+		if(clientNameToHashMap.count(fileName)>0) //debug
+			cout<<clientNameToHashMap[fileName]<<" : "<<fileHash<<endl;
+
 		if(clientNameToHashMap.count(fileName)==0) {
 			continue;
 		} else if(clientNameToHashMap[fileName]==fileHash) { //no need to download since name and hash match
@@ -273,11 +283,12 @@ vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const ve
 		clientNameToHashMap.erase(fileName); //erase to find out which client's files are new to FSS
 	}
 
-	//add the files that client has but FSS doesn't
-	unordered_map<string, string>::iterator itr2 = clientNameToHashMap.begin();
-	while(itr2 != clientNameToHashMap.end()) {
-		result.push_back(make_pair(itr2->first, m_cdnIdToAddrMap[closestCdnId]));
-		itr2++;
+	if(sharedOnly==false) { //add the files that client has but FSS doesn't if sharedOnly is false
+		unordered_map<string, string>::iterator itr2 = clientNameToHashMap.begin();
+		while(itr2 != clientNameToHashMap.end()) {
+			result.push_back(make_pair(itr2->first, m_cdnIdToAddrMap[closestCdnId]));
+			itr2++;
+		}
 	}
 
 	return result;
@@ -481,7 +492,7 @@ void MetaServer::updateVersion_timestamp() {
 	m_version_timestamp = (m_version_timestamp+1)%10;
 }
 
-void parseLine_timestamp(string s, string& fileName, long long& timeStamp) {
+void parseLine_timestamp(string s, string& fileName, string& timeStamp) {
 	fileName = "";
 	timeStamp = -1;
 	string curr = "";
@@ -494,34 +505,34 @@ void parseLine_timestamp(string s, string& fileName, long long& timeStamp) {
 	fileName = curr;
 	curr = "";
 	while(idx<s.size()) {
-		curr = s[idx];
+		curr += s[idx];
 		++idx;
 	}
-	timeStamp = stoll(curr);
+	timeStamp = curr;
 }
 
 //only considers files that exist in both client and fss
-int MetaServer::processSyncWithTimeStamp(const vector< pair<string, long long> >& clientFileList, //<file name, file timestamp>
-										 vector<string>& uploadList, vector<string>& downloadList, vector<string>& deleteList) {
+int MetaServer::processSyncWithTimeStamp(const vector< pair<string, string> >& clientFileList, //<file name, file timestamp>
+										 vector<string>& uploadList, vector<string>& downloadList) {
 	uploadList.clear();
 	downloadList.clear();
-	deleteList.clear();
 	string currFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
 	ifstream file(currFileName.c_str());
 	if(!file.is_open()) {
 		cout<<"MetaServer::processSyncWithTimeStamp - file not opened"<<endl;
 		return -1;
 	}
-	unordered_map<string, long long> clientNameToTimestampMap;
+	unordered_map<string, string> clientNameToTimestampMap;
 	for(int i=0; i<clientFileList.size(); i++)
 		clientNameToTimestampMap[clientFileList[i].first] = clientFileList[i].second;
 	string currLine;
 	while(getline(file, currLine)) {
-		string fileName;
-		long long timeStampFSS;
+		string fileName, timeStampFSS;
 		parseLine_timestamp(currLine, fileName, timeStampFSS);
 		if(clientNameToTimestampMap.count(fileName) > 0) {
-			if(clientNameToTimestampMap[fileName] > timeStampFSS) { //client has more recent version; client needs to upload it to fss
+			//cout<<clientNameToTimestampMap[fileName]+" : "+timeStampFSS<<endl;
+			//cout<<stoll(clientNameToTimestampMap[fileName])<<" : "<<stoll(timeStampFSS)<<endl;
+			if(stoll(clientNameToTimestampMap[fileName]) > stoll(timeStampFSS)) { //client has more recent version; client needs to upload it to fss
 				uploadList.push_back(fileName);
 			} else { //fss has more recent version; client needs to download it from fss
 				downloadList.push_back(fileName);
@@ -531,25 +542,29 @@ int MetaServer::processSyncWithTimeStamp(const vector< pair<string, long long> >
 	return 0;
 }
 
-int MetaServer::addNewTimeStamp(string fileName, long long timeStamp) {
+int MetaServer::addNewTimeStamp(string fileName, string timeStamp) {
 	string currFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
 	ofstream file(currFileName.c_str(), ios_base::app | ios_base::out);
 	if(!file.is_open()) {
 		cout<<"MetaServer::addNewTimeStamp - file not opened"<<endl;
 		return -1;
 	}
-	string lineToAdd = fileName + " " + to_string(timeStamp) + "\n";
+	string lineToAdd = fileName + " " + timeStamp + "\n";
 	file << lineToAdd;
 	file.close();
 	return 0;
 }
 
-int MetaServer::updateTimeStamp(string fileName, long long timeStamp) {
-	if(deleteTimeStamp(fileName)==-1)
-		return -1;
-	if(addNewTimeStamp(fileName, timeStamp)==-1)
-		return -1;
-	return 0;
+int MetaServer::updateTimeStamp(string fileName, string timeStamp) {
+	string currFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
+	ifstream fileExistTest(currFileName.c_str());
+	if(!fileExistTest) {
+		return addNewTimeStamp(fileName, timeStamp);
+	} else {
+		fileExistTest.close();
+		deleteTimeStamp(fileName);
+		return addNewTimeStamp(fileName, timeStamp);
+	}
 }
 
 int MetaServer::deleteTimeStamp(string fileName) {
