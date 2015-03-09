@@ -56,7 +56,6 @@ void CDNReceiver::handle_delete(http_request message) {
 	 */
 
 	string fileName = message.relative_uri().to_string();
-	//fileName = fileName.substr(1);
 
 	cout << endl << "---------------"<< endl;
 	cout << fileName << endl;
@@ -77,7 +76,6 @@ void CDNReceiver::handle_get(http_request message) {
 	 */
 
 	string fileName = message.relative_uri().to_string();
-	//fileName = fileName.substr(1); //remove the first /
 	CDNSender* sender = m_cdn->getSender();
 
 	cout << endl << "---------------"<< endl;
@@ -122,7 +120,6 @@ void CDNReceiver::handle_put(http_request message) {
 	 */
 
 	string fileName = message.relative_uri().path();
-	//fileName = fileName.substr(1); //remove the first /
 	string fileHash = message.relative_uri().query();
 	string contents = message.extract_string().get();
 

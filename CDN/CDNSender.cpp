@@ -109,7 +109,7 @@ int CDNSender::sendRegisterMsgToMeta(Address cdnAddr, int& assignedId) {
  */
 
 int CDNSender::getFileFromFSS(string fileName, int cdnId) {
-	http_response resp = m_fss_client.request(methods::GET, U("/get/"+fileName)).get();
+	http_response resp = m_fss_client.request(methods::GET, U("/get"+fileName)).get();
 	if(resp.status_code() != status_codes::OK) {
 		cout<<"CDNSender:getFileFromFSS - failed to download file"<<endl;
 		return -1;
