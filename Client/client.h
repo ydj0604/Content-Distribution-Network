@@ -27,12 +27,10 @@ public:
   void syncDownload();
   void syncUpload();
   string baseDir;
-  
+
 private:
   vector<FileInfo> compareListOfFiles_explicit(vector<FileInfo>& files, int type);
-  void compareListOfFiles_sync(vector<FileInfo>& files);
-  vector<FileInfo> downloadFileList;
-  vector<FileInfo> uploadFileList;
+  void compareListOfFiles_sync(vector<FileInfo>& files, vector<FileInfo>& uploadFileList, vector<FileInfo>& downloadFileList);
   vector<FileInfo> getListOfFilesFromDirectory(string subpath);
   void downloadFile(FileInfo f);
   void uploadFile(FileInfo f);

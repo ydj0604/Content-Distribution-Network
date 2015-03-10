@@ -99,7 +99,7 @@ void Client::syncUpload() {
     uploadFile(diffFiles[i]);
 }
 
-void Client::compareListOfFiles_sync(vector<FileInfo>& files) {
+void Client::compareListOfFiles_sync(vector<FileInfo>& files, vector<FileInfo>& uploadFileList, vector<FileInfo>& downloadFileList) {
 
   // create json object to be attached in the http request body
   json::value req_json = json::value::object();
@@ -144,6 +144,9 @@ void Client::compareListOfFiles_sync(vector<FileInfo>& files) {
       json::value jValue = fileComp_resp.extract_json().get();
       json::value& compare_list = jValue.at(U("FileList"));
 
+      // clear the upload/download fileList vectors just in case
+      uploadFileList.clear();
+      downloadFileList.clear();
       
       for(auto& fileObj : compare_list.as_array()) {
         FileInfo fileNew;
