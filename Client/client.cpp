@@ -7,6 +7,8 @@
 #include <cstdio> // for printf
 #include <stdlib.h>
 #include <sys/stat.h> // for dir checking
+#include <sys/types.h>
+#include <unistd.h>
 
 using namespace std;
 using namespace web;
@@ -17,10 +19,11 @@ using namespace web::http;
 using namespace web::http::client;
 
 
-FileInfo newFileInfo(string name, string hash, string cdnAddr) {
+FileInfo newFileInfo(string name, string hash, string timestamp, string cdnAddr) {
   FileInfo f = FileInfo();
   f.name = name;
   f.hash = hash;
+  f.timestamp = timestamp;
   f.cdnAddr = cdnAddr;
   return f;
 }
@@ -72,7 +75,7 @@ void Client::syncDownload() {
   cout << endl;
 
   // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles(files, 1);
+  vector<FileInfo> diffFiles = compareListOfFiles_explicit(files, 1);
 
   // For each file that needs to be updated, download
   for(size_t i = 0; i < diffFiles.size();i ++) {
@@ -89,18 +92,88 @@ void Client::syncUpload() {
   cout << endl;
 
   // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles(files, 0);
+  vector<FileInfo> diffFiles = compareListOfFiles_explicit(files, 0);
 
   // For each file that needs to be updated, upload
   for(size_t i = 0; i < diffFiles.size();i ++)
     uploadFile(diffFiles[i]);
 }
 
-vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
-  // Upload list of file / hashes
-  // return list of fileNames that need to be dl'd / uploaded
+void Client::compareListOfFiles_sync(vector<FileInfo>& files) {
 
-  /* WHAT WAS NEWLY IMPLEMENTED */
+  // create json object to be attached in the http request body
+  json::value req_json = json::value::object();
+
+  // create json array of FileList
+  json::value req_fileList = json::value::array();
+  for (size_t i = 0; i < files.size(); i++) {
+    json::value currFileObj = json::value::object();
+    currFileObj[U("Name")] = json::value::string(U(files[i].name));
+    currFileObj[U("Hash")] = json::value::string(U(files[i].hash));
+    currFileObj[U("TimeStamp")] = json::value::string(U(files[i].timestamp));
+
+    req_fileList[i] = currFileObj;
+  }
+
+  // store this array in json object
+  // and also the IP, Lat, Lng
+  req_json[U("FileList")] = req_fileList;
+  req_json[U("IP")] = json::value::string(U(client_ip));
+  req_json[U("Lat")] = json::value::number(client_lat);
+  req_json[U("Lng")] = json::value::number(client_lng);
+
+  // request message should be directed to Origin IP address
+  uri_builder origin_url(U(m_orig_ip));
+  http_client client(origin_url.to_uri());  // create client object
+
+  // POST this json message to the origin to ask for which files need to be uploaded/downloaded
+  // given the file list already in sync with FSS
+  http_response fileComp_resp;
+  try {
+    fileComp_resp = client.request( methods::POST, U("/origin/sync/"), req_json ).get();
+  } catch (const std::exception& e) {
+    cout << "ERROR: compare list of files => sync : " << e.what() << endl;
+  }
+
+  // process the file list that is returned in response
+  // distinguish whether it's download/upload
+  try {
+    if (fileComp_resp.status_code() == status_codes::OK ) {
+      cout << "compared file list has been retrieved! SYNC" << endl;
+
+      json::value jValue = fileComp_resp.extract_json().get();
+      json::value& compare_list = jValue.at(U("FileList"));
+
+      
+      for(auto& fileObj : compare_list.as_array()) {
+        FileInfo fileNew;
+        fileNew.name = fileObj.at(U("Name")).as_string();
+        fileNew.cdnAddr = fileObj.at(U("Address")).as_string();
+
+        // push the newly constructed file into the list of either downloadFileList or uploadFileList
+        if (fileObj.at(U("Type")).as_string() == "UP") {
+          uploadFileList.push_back(fileNew);
+        } else if(fileObj.at(U("Type")).as_string() == "DOWN") {
+          downloadFileList.push_back(fileNew);
+        } else {
+          fprintf(stderr, "Wrong file type has been detected!\n");
+        }
+        
+      }
+    } else { // handle non-OK status codes
+        fprintf(stderr, "Response from Origin failed :(\n");
+          return;
+    }
+  } catch ( json::json_exception &e ) {
+      fprintf(stderr, "JSON object error: %s\n", e.what());
+      return;
+  }
+
+  return;
+}
+
+vector<FileInfo> Client::compareListOfFiles_explicit(vector<FileInfo>& files, int type) {
+
   // create json object to be attached in the http request body
   json::value req_json = json::value::object();
   req_json[U("Type")] = json::value::number(type);
@@ -111,7 +184,7 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
     json::value currFileObj = json::value::object();
     currFileObj[U("Name")] = json::value::string(U(files[i].name));
     currFileObj[U("Hash")] = json::value::string(U(files[i].hash));
-    currFileObj[U("Address")] = json::value::string(U(files[i].cdnAddr));
+    //currFileObj[U("Address")] = json::value::string(U(files[i].cdnAddr));
 
     req_fileList[i] = currFileObj;
   }
@@ -133,14 +206,14 @@ vector<FileInfo> Client::compareListOfFiles(vector<FileInfo>& files, int type) {
   try {
     fileComp_resp = client.request( methods::POST, U("/origin/explicit/"), req_json ).get();
   } catch (const std::exception& e) {
-    cout << "ERROR: compare list of files, " << e.what() << endl;
+    cout << "ERROR: compare list of files => explicit : " << e.what() << endl;
   }
 
   vector<FileInfo> diff_files;
 
   try {
     if (fileComp_resp.status_code() == status_codes::OK ) {
-      cout << "compared file list has been retrieved!" << endl;
+      cout << "compared file list has been retrieved! EXPLICIT" << endl;
 
       json::value jValue = fileComp_resp.extract_json().get();
       json::value& compare_list = jValue.at(U("FileList"));
@@ -194,6 +267,8 @@ vector<FileInfo> Client::getListOfFilesFromDirectory(string subpath) {
   }
 
   struct dirent *ent;
+  struct stat st;
+
   while ((ent = readdir(dir)) != NULL) {
     // Skip hidden files
     if (ent->d_name[0] == '.')
@@ -206,8 +281,27 @@ vector<FileInfo> Client::getListOfFilesFromDirectory(string subpath) {
       continue;
     }
 
+    // convert file's path from string to char * array
+    string str_path = subpath+ent->d_name;
+    char filePath[1024];
+    strncpy(filePath, str_path.c_str(), sizeof(filePath));
+    filePath[sizeof(filePath) - 1] = 0;
+
+    // get the file statistics
+    int ierr = stat(filePath, &st);
+    if (ierr < 0)
+      fprintf(stderr, "File statistics was not able to be found!\n");
+
+    // get the last modified timestamp in char string
+    unsigned long lval = st.st_mtime;
+    char timebuf[50];
+    sprintf(timebuf, "%lu" , lval);
+    string timestamp_str = timebuf;
+
+    //cout << "File = " << filePath << " timestamp: " << timestamp_str << endl;
+
     // Convert to string object and add to return vector
-    FileInfo f = newFileInfo(subpath+ent->d_name, hashFile(path+ent->d_name));
+    FileInfo f = newFileInfo(subpath+ent->d_name, hashFile(path+ent->d_name), timestamp_str);
     files.push_back(f);
   }
 
