@@ -10,3 +10,5 @@ Technologies to be used:
 1. casablanca (C++): https://casablanca.codeplex.com/
 
 Google Doc: https://docs.google.com/document/d/1vdE9084hsvU3WLp8chF8b2vXLoSgocfiD8iQCq24T-w/edit
+
+Google PPT: https://docs.google.com/presentation/d/1G8iBTZke0ICHwlI0blQ34HTgESA0paf6LCjBpROqnUs/edit#slide=id.p
