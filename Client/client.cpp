@@ -19,7 +19,6 @@ using namespace json;
 using namespace web::http;
 using namespace web::http::client;
 
-
 FileInfo newFileInfo(string name, string hash, string timestamp, string cdnAddr) {
   FileInfo f = FileInfo();
   f.name = name;
@@ -34,24 +33,16 @@ void printFileInfo(FileInfo f) {
 }
 
 Client::Client() {
-  baseDir = "./";
-
-  // get the ip_address of the client and lat/lng
-  // Get client ip instance
-  ip_instance = new ipToLatLng();
-  client_ip = ip_instance->getipaddr();
-
-  // use GET http request to retrieve client's latitude/longitude
-  ip_instance->IPJsonToLatLng( client_ip );
-  client_lat = ip_instance->getlat();
-  client_lng = ip_instance->getlng();
+  initClient();
 }
 
 Client::Client( string orig_ip ) : m_orig_ip(orig_ip) {
   // store ip address of Origin
+  initClient();
+}
 
+void Client::initClient() {
   baseDir = "./";
-
   // get the ip_address of the client and lat/lng
   // Get client ip instance
   ip_instance = new ipToLatLng();
@@ -69,36 +60,33 @@ Client::~Client() {
 }
 
 void Client::syncDownload() {
-  // Get list of files in directory
-  vector<FileInfo> files = getListOfFilesFromDirectory("");
-  for (size_t i = 0; i < files.size(); i++)
-    printFileInfo(files[i]);
-  cout << endl;
-
-  // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles_explicit(files, 1);
-
-  // For each file that needs to be updated, download
-  for(size_t i = 0; i < diffFiles.size();i ++) {
-    printFileInfo(diffFiles[i]);
-    downloadFile(diffFiles[i]);
-  }
+  syncExplicit(1);
 }
 
 void Client::syncUpload() {
-  // Get list of files in directory
+  syncExplicit(0);
+}
+
+void Client::syncExplicit(int downloadOrUpload) {
+  // 1 for download, 0 for upload
   vector<FileInfo> files = getListOfFilesFromDirectory("");
   for (size_t i = 0; i < files.size(); i++)
     printFileInfo(files[i]);
   cout << endl;
 
   // Compare with origin server
-  vector<FileInfo> diffFiles = compareListOfFiles_explicit(files, 0);
+  vector<FileInfo> diffFiles = compareListOfFiles_explicit(files, downloadOrUpload);
 
-  // For each file that needs to be updated, upload
-  for(size_t i = 0; i < diffFiles.size();i ++)
-    uploadFile(diffFiles[i]);
+  // For each file that needs to be updated, upload/download
+  for(size_t i = 0; i < diffFiles.size();i ++) {
+    printFileInfo(diffFiles[i]);
+    if (downloadOrUpload)
+      downloadFile(diffFiles[i]);
+    else
+      uploadFile(diffFiles[i]);
+  }
 }
+
 
 void Client::autoSync(bool isFirstRun) {
 
@@ -383,7 +371,7 @@ void Client::downloadFile(FileInfo f) {
     printf("OK, saving...\n");
 
     string contents = response.extract_string().get();
-    //cout << contents << endl;
+    cout << contents << endl;
 
 #if USE_CRYPTO > 0
     cout << "Decrypt" << endl;

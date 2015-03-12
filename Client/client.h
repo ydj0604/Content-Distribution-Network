@@ -34,6 +34,9 @@ public:
   string baseDir;
 
 private:
+  void initClient();
+  void syncExplicit(int downloadOrUpload);
+
   vector<FileInfo> compareListOfFiles_explicit(vector<FileInfo>& files, int type);
   void compareListOfFiles_sync(vector<FileInfo>& files, vector<FileInfo>& uploadFileList, vector<FileInfo>& downloadFileList);
   vector<FileInfo> getListOfFilesFromDirectory(string subpath);
