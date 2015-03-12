@@ -3,6 +3,10 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <stdio.h>      /* printf */
+#include <stdlib.h>     /* system, NULL, EXIT_FAILURE */
+#include <unordered_map>
 
 using namespace std;
 
@@ -26,6 +30,7 @@ public:
   ~Client();
   void syncDownload();
   void syncUpload();
+  void autoSync(bool isFirstRun);
   string baseDir;
 
 private:
@@ -40,6 +45,7 @@ private:
   string client_ip;
   double client_lat, client_lng;
   string m_orig_ip;
+  unordered_map<string, string> fileToTimeStamp;  // filename mapped to its timestamp
   
 };
 

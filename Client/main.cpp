@@ -1,9 +1,10 @@
 #include <iostream>
-#include <string> // for strcmp
+#include <string>   
 #include <string.h> // for strcmp
 #include "client.h"
-#include "hash.h"
-#include <cstdio> // printf
+#include <cstdio>   // printf
+#include <unistd.h> // sleep
+
 using namespace std;
 
 int main(int argc, char *argv[]) {
@@ -24,6 +25,23 @@ int main(int argc, char *argv[]) {
     } else if (strcmp(argv[1], "--upload") == 0) {
       printf("Upload\n");
       c.syncUpload();
+    } else if (strcmp(argv[1], "--sync") == 0) {
+      
+      bool isFirstRun = true;
+      while (1) {
+
+        printf("Autosyncing...\n");
+        
+        // sleep for 10 seconds until next syncing
+        sleep(10);
+
+        // call the autoSync
+        c.autoSync(isFirstRun);
+
+        // set it to false to avoid explicit download in the next iteration
+        isFirstRun = false;
+
+      }
     }
   } else {
     printf("Specify --download or --upload\n");
