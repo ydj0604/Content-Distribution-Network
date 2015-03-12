@@ -1,5 +1,6 @@
 #include "client.h"
 #include "hash.h"
+#include "encryption.h"
 #include "../ipToLatLng/ipToLatLng.h"
 #include <cpprest/http_client.h>
 #include <iostream>
@@ -286,6 +287,8 @@ vector<FileInfo> Client::compareListOfFiles_explicit(vector<FileInfo>& files, in
       return diff_files;
   }
 
+  cout << "Success" << endl;
+
   return diff_files;
 }
 
@@ -382,6 +385,11 @@ void Client::downloadFile(FileInfo f) {
     string contents = response.extract_string().get();
     //cout << contents << endl;
 
+#if USE_CRYPTO > 0
+    cout << "Decrypt" << endl;
+    contents = decryptFile(contents);
+#endif 
+
     // Write to file
     ofstream saveFile;
     saveFile.open(baseDir + f.name);
@@ -402,6 +410,11 @@ void Client::uploadFile(FileInfo f) {
   std::stringstream buf;
   buf << readF.rdbuf();
   string contents = buf.str();
+
+#if USE_CRYPTO > 0
+    cout << "Encrypt" << endl;
+    contents = encryptFile(contents);
+#endif 
 
   // upload file to cdn node
   string cdn_address = "http://" + f.cdnAddr + "/";

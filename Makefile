@@ -1,6 +1,7 @@
 CC=g++
 CC_FLAGS=-std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare
 LD_FLAGS=-I$(HOME)/casablanca/Release/include/ -L$(HOME)/casablanca/Release/build.release/Binaries -lcpprest -lboost_system
+LD_CRYPTO_FLAGS=-lcryptopp -lpthread
 OUTDIR=build
 
 all: client fss meta cdn
@@ -9,7 +10,7 @@ CLIENT_SRC=$(wildcard Client/*.cpp) $(wildcard ipToLatLng/*.cpp)
 CLIENT_OBJ=$(CLIENT_SRC:.cpp=.o)
 client: $(CLIENT_OBJ)
 	mkdir -p $(OUTDIR)
-	$(CC) $(CC_FLAGS) $(CLIENT_OBJ) -o $(OUTDIR)/client $(LD_FLAGS)
+	$(CC) $(CC_FLAGS) $(CLIENT_OBJ) -o $(OUTDIR)/client $(LD_FLAGS) $(LD_CRYPTO_FLAGS)
 
 FSS_SRC=$(wildcard FSS/*.cpp) $(wildcard ipToLatLng/*.cpp)
 FSS_OBJ=$(FSS_SRC:.cpp=.o)
