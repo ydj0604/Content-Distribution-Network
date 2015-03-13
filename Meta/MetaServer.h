@@ -49,7 +49,7 @@ public:
 
 	//functions for timestamp management
 	int processSyncWithTimeStamp(const vector< pair<string, string> >& clientFileList,
-								 vector<string>& uploadList, vector<string>& downloadList);
+								 vector<string>& uploadList, vector<string>& downloadList, unordered_map<string, string>& nameToTsMap);
 	int updateTimeStamp(string fileName, string timeStamp);
 	int addNewTimeStamp(string fileName, string timeStamp);
 	int deleteTimeStamp(string fileName);

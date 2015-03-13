@@ -4,6 +4,7 @@
 #include "../Shared.h"
 #include "cpprest/http_listener.h"
 #include <iostream>
+#include <unordered_map>
 using namespace std;
 
 OriginServer::OriginServer(string originIpAddrPort, MetaServer* meta) {
@@ -43,7 +44,7 @@ vector< pair<string, Address> > OriginServer::getListOfFilesUpload(const vector<
 
 
 //vector<<file name, file time stamp>> for input list
-int OriginServer::getListForSync(const vector< pair<string, string> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList) {
-	int result = m_meta->processSyncWithTimeStamp(clientFileList, uploadList, downloadList);
+int OriginServer::getListForSync(const vector< pair<string, string> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList, unordered_map<string, string>& nameToTsMap) {
+	int result = m_meta->processSyncWithTimeStamp(clientFileList, uploadList, downloadList, nameToTsMap);
 	return result;
 }

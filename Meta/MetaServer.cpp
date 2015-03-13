@@ -513,9 +513,10 @@ void parseLine_timestamp(string s, string& fileName, string& timeStamp) {
 
 //only considers files that exist in both client and fss
 int MetaServer::processSyncWithTimeStamp(const vector< pair<string, string> >& clientFileList, //<file name, file timestamp>
-										 vector<string>& uploadList, vector<string>& downloadList) {
+										 vector<string>& uploadList, vector<string>& downloadList, unordered_map<string, string>& nameToTsMap) {
 	uploadList.clear();
 	downloadList.clear();
+	nameToTsMap.clear();
 	string currFileName = m_file_timestamp+"_v" + char('0'+m_version_timestamp);
 	ifstream file(currFileName.c_str());
 	if(!file.is_open()) {
@@ -535,8 +536,12 @@ int MetaServer::processSyncWithTimeStamp(const vector< pair<string, string> >& c
 			if(stoll(clientNameToTimestampMap[fileName]) > stoll(timeStampFSS)) { //client has more recent version; client needs to upload it to fss
 				uploadList.push_back(fileName);
 			} else { //fss has more recent version; client needs to download it from fss
+				nameToTsMap[fileName] = timeStampFSS;
 				downloadList.push_back(fileName);
 			}
+		} else if(clientNameToTimestampMap.count(fileName) == 0) { //if only fss has the file, include it to download list. Removed files will be handled by client app
+			nameToTsMap[fileName] = timeStampFSS;
+			downloadList.push_back(fileName);
 		}
 	}
 	return 0;

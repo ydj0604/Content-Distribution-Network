@@ -3,6 +3,7 @@
 #include <iostream>
 #include "OriginServer.h"
 #include "../Shared.h"
+#include <unordered_map>
 
 using namespace std;
 using namespace web;
@@ -53,8 +54,10 @@ void OriginClientReceiver::handle_sync(http_request message) {
 
 	Response
 	{
-		"FileList": [{"Name": "a.txt" ,"Address": "1.1.1.1", "Type": "UP"}, {"Name": "b.txt" ,"Address": "2.2.2.2", "Type": "DOWN"}]
+		"FileList": [{"Name": "a.txt" ,"Address": "1.1.1.1", "Type": "UP"}, {"Name": "b.txt" ,"Address": "2.2.2.2", "Type": "DOWN", "TimeStamp": "123123123"}]
 	}
+
+	!! Note that TimeStamp is returned only for files to download
 
 	*/
 
@@ -75,7 +78,8 @@ void OriginClientReceiver::handle_sync(http_request message) {
 
 			//get which files to upload and which files to download
 			vector<string> uploadFileList, downloadFileList;
-			if(m_origin->getListForSync(clientListTS, uploadFileList, downloadFileList)!=0) {
+			unordered_map<string, string> nameToTsMap;
+			if(m_origin->getListForSync(clientListTS, uploadFileList, downloadFileList, nameToTsMap)!=0) {
 				message.reply(status_codes::NotFound, U("failure to get the list for sync"));
 				return;
 			}
@@ -108,6 +112,7 @@ void OriginClientReceiver::handle_sync(http_request message) {
 				currFileObj[U("Name")] = json::value::string(U(resultDownloadList[i].first));
 				currFileObj[U("Address")] = json::value::string(U(resultDownloadList[i].second.ipAddr));
 				currFileObj[U("Type")] = json::value::string(U("DOWN"));
+				currFileObj[U("TimeStamp")] = json::value::string(U(nameToTsMap[resultDownloadList[i].first]));
 				respList[resultUploadList.size()+i] = currFileObj;
 			}
 			json::value respFinal = json::value::object();

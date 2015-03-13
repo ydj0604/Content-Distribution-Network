@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include "../Shared.h"
 
 class MetaServer;
@@ -20,7 +21,7 @@ public:
 	void endListening();
 	vector< pair<string, Address> > getListOfFilesDownload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr, bool sharedOnly=false);
 	vector< pair<string, Address> > getListOfFilesUpload(const vector< pair<string, string> >& listFromClientApp, Address clientAddr, bool sharedOnly=false);
-	int getListForSync(const vector< pair<string, string> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList);
+	int getListForSync(const vector< pair<string, string> >& clientFileList, vector<string>& uploadList, vector<string>& downloadList, unordered_map<string, string>& nameToTsMap);
 
 private:
 	MetaServer* m_meta;
