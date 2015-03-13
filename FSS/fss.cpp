@@ -127,7 +127,7 @@ void FSS::handle_post(http_request message) {
   cout << endl << "---------------"<< endl;
   cout << "POST " << filePath << endl;
   cout << message.to_string() << endl;
-  cout << contents << endl;
+  //cout << contents << endl;
 
   // Create paths as needed
   // As usual, ignore injection and other security concerns, because school project

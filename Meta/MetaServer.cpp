@@ -215,9 +215,6 @@ vector< pair<string, Address> > MetaServer::processListFromOriginDownload(const 
 		vector<int> cdnsThatContainFile;
 		parseLine(currLine, fileName, fileHash, cdnsThatContainFile);
 
-		if(clientNameToHashMap.count(fileName)>0) //debug
-			cout<<clientNameToHashMap[fileName]<<" : "<<fileHash<<endl;
-
 		if(sharedOnly==true && clientNameToHashMap.count(fileName)==0) //if client doesn't have and sharedOnly is true, don't add it to the result list
 			continue;
 		if(clientNameToHashMap.count(fileName)>0 && clientNameToHashMap[fileName]==fileHash) //no need to download since name and hash match

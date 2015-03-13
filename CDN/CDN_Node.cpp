@@ -244,13 +244,13 @@ long long CDN_Node::get_size_of_storage() {
                 if( sb.st_mode & S_IFDIR && (string)ent->d_name != "." && (string)ent->d_name != ".." )
                 {
                     //it's a directory
-                    cout << "directory: " << ent->d_name << endl;
+                    //cout << "directory: " << ent->d_name << endl;
                     if((dir_2 = opendir(path_maker(ent->d_name))) ==NULL) {
                         cout << "this directory can't be opened" << endl;
                             break;
                     }
                     while((ent_2 = readdir(dir_2))!= NULL) {
-                        cout << "ent_2: " << ent_2->d_name << endl;
+                        //cout << "ent_2: " << ent_2->d_name << endl;
                         stat(path_maker(ent_2->d_name), &sb);
                         size_of_storage += (long long)sb.st_size;
                     }
@@ -259,7 +259,7 @@ long long CDN_Node::get_size_of_storage() {
                 else
                 {
                     //it's a file
-                    cout << "file: " << ent->d_name << endl;
+                    //cout << "file: " << ent->d_name << endl;
                     size_of_storage += (long long)sb.st_size;
                 }
                 

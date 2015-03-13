@@ -250,7 +250,7 @@ vector<FileInfo> Client::compareListOfFiles_explicit(vector<FileInfo>& files, in
 
   try {
     if (fileComp_resp.status_code() == status_codes::OK ) {
-      cout << "compared file list has been retrieved! EXPLICIT" << endl;
+      //cout << "compared file list has been retrieved! EXPLICIT" << endl;
 
       json::value jValue = fileComp_resp.extract_json().get();
       json::value& compare_list = jValue.at(U("FileList"));
@@ -299,7 +299,7 @@ vector<FileInfo> Client::getListOfFilesFromDirectory(string subpath) {
    * for the top level call, use subpath="", basedir will be appeneded automatically
    */
   string path = baseDir + subpath;
-  cout << "Getting list of files from " << path << endl;
+  //cout << "Getting list of files from " << path << endl;
   vector<FileInfo> files;
 
   DIR *dir = opendir(path.c_str());
@@ -317,7 +317,7 @@ vector<FileInfo> Client::getListOfFilesFromDirectory(string subpath) {
       continue;
 
     if (isDir(path+ent->d_name)) {
-      cout << path + ent->d_name << " is dir" <<endl;
+      //cout << path + ent->d_name << " is dir" <<endl;
       vector<FileInfo> subDirFiles = getListOfFilesFromDirectory(string(ent->d_name) + "/");
       files.insert(files.end(), subDirFiles.begin(), subDirFiles.end());
       continue;
@@ -371,12 +371,18 @@ void Client::downloadFile(FileInfo f) {
     printf("OK, saving...\n");
 
     string contents = response.extract_string().get();
-    cout << contents << endl;
+    //cout << contents << endl;
 
 #if USE_CRYPTO > 0
     cout << "Decrypt" << endl;
     contents = decryptFile(contents);
 #endif 
+
+    //make a parent directories
+    string cmd = "mkdir -p $(dirname " + baseDir + f.name + ")";
+    int ret = system(cmd.c_str());
+    if (ret != 0)
+      cout << "Error creating directories for path " << f.name << endl;
 
     // Write to file
     ofstream saveFile;
