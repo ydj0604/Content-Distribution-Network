@@ -7,6 +7,7 @@
 
 using namespace std;
 
+
 int main(int argc, char *argv[]) {
   cout << "INITIALIZING CLIENT" << endl;
   Client c = Client("http://localhost:3000/"); // initialize origin ip
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]) {
       bool isFirstRun = true;
       while (1) {
 
-        printf("Autosyncing...\n");
+        printf("\n  Autosyncing.....\n\n");
         
         // sleep for 10 seconds until next syncing
         sleep(10);

@@ -267,9 +267,6 @@ vector< pair<string, Address> > MetaServer::processListFromOriginUpload(const ve
 		vector<int> cdnsThatContainFile;
 		parseLine(currLine, fileName, fileHash, cdnsThatContainFile);
 
-		if(clientNameToHashMap.count(fileName)>0) //debug
-			cout<<clientNameToHashMap[fileName]<<" : "<<fileHash<<endl;
-
 		if(clientNameToHashMap.count(fileName)==0) {
 			continue;
 		} else if(clientNameToHashMap[fileName]==fileHash) { //no need to download since name and hash match
