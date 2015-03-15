@@ -400,14 +400,14 @@ void Client::downloadFile(FileInfo f) {
 #endif 
 
     //make a parent directories
-    string cmd = "mkdir -p $(dirname " + baseDir + "/" + f.name + ")";
+    string cmd = "mkdir -p $(dirname " + baseDir + f.name + ")";
     int ret = system(cmd.c_str());
     if (ret != 0)
       cout << "Error creating directories for path " << f.name << endl;
 
     // Write to file
     ofstream saveFile;
-    saveFile.open(baseDir + "/" + f.name);
+    saveFile.open(baseDir + f.name);
     saveFile << contents;
     saveFile.close();
   } else {
@@ -421,7 +421,7 @@ void Client::uploadFile(FileInfo f) {
   printFileInfo(f);
   
   // Read file body
-  ifstream readF(baseDir + "/" + f.name);
+  ifstream readF(baseDir + f.name);
   std::stringstream buf;
   buf << readF.rdbuf();
   string contents = buf.str();
@@ -439,7 +439,7 @@ void Client::uploadFile(FileInfo f) {
   http_response response;
   try {
     if (f.hash == "")
-      f.hash = hashFile(baseDir + "/" + f.name);
+      f.hash = hashFile(baseDir + f.name);
     response = cdn_client.request(methods::PUT, f.name + "?" + f.hash + "&" + f.timestamp, contents).get();
   } catch (const std::exception& e) {
     printf("ERROR, %s\n", e.what());
