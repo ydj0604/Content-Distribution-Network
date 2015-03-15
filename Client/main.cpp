@@ -31,10 +31,15 @@ int main(int argc, char *argv[]) {
       bool isFirstRun = true;
       while (1) {
 
-        printf("\n  Autosyncing.....\n\n");
+        printf("\n  Autosyncing.....");
         
         // sleep for 10 seconds until next syncing
-        sleep(10);
+        for (int i = 5; i > 0; i--) {
+          cout << i << " ";
+          fflush(stdout);
+          sleep(1);
+        }
+        cout << endl << endl;
 
         // call the autoSync
         c.autoSync(isFirstRun);
@@ -45,7 +50,7 @@ int main(int argc, char *argv[]) {
       }
     }
   } else {
-    printf("Specify --download or --upload\n");
+    printf("Specify --download, --upload or --sync\n");
   }
 
   return 0;

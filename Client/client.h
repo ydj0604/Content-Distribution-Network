@@ -44,6 +44,14 @@ private:
   void uploadFile(FileInfo f);
   bool isDir(string dirPath);
 
+  // For delete/new
+  vector<FileInfo> postSyncFileList;
+  vector<FileInfo> deletedFiles;
+  bool needsSyncUpload = false;
+  bool fileListContains(string filePath, vector<FileInfo>& fileList);
+  void compareLocalFileLists(vector<FileInfo>&postSyncList, vector<FileInfo>&current);
+
+
   ipToLatLng* ip_instance;
   string client_ip;
   double client_lat, client_lng;

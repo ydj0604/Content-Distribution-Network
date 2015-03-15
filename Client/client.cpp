@@ -122,12 +122,16 @@ void Client::autoSync(bool isFirstRun) {
     printFileInfo(files[i]);
   cout << "===============================================" << endl;
 
+  // postSyncFileList not set yet, skip comparing
+  if (!isFirstRun)
+    compareLocalFileLists(postSyncFileList, files);
+
   // call compareListOfFiles_sync() and retrieve upload/download file list
   compareListOfFiles_sync(files, uploadFileList, downloadFileList);
 
   if (downloadFileList.size() == 0 && uploadFileList.size() == 0) {
     cout << "No download/upload file to process... Exiting..." << endl;
-    return;
+    // return;
   } else if (downloadFileList.size() > 0 && uploadFileList.size() == 0) {
     cout << "Download processing..." << endl;
   } else if (downloadFileList.size() == 0 && uploadFileList.size() > 0) {
@@ -142,6 +146,10 @@ void Client::autoSync(bool isFirstRun) {
 
   for(size_t i = 0; i < uploadFileList.size(); i++)
     uploadFile(uploadFileList[i]);
+
+  // Record files in directory after sync for comparison
+  postSyncFileList.clear();
+  postSyncFileList = getListOfFilesFromDirectory("");
 
   return;
 }
@@ -301,6 +309,45 @@ vector<FileInfo> Client::compareListOfFiles_explicit(vector<FileInfo>& files, in
   return diff_files;
 }
 
+bool Client::fileListContains(string filePath, vector<FileInfo>& fileList) {
+  for (int i = 0; i < fileList.size(); i++) {
+    if (fileList[i].name == filePath)
+      return true;
+  }
+  return false;
+}
+
+void Client::compareLocalFileLists(vector<FileInfo>&postList, vector<FileInfo>&current) {
+  // Detect any new deleted files, or new files
+  cout << "Comparing local list" << endl;
+  cout << "post: ";
+  for (int i = 0; i < postList.size(); i++)
+    cout << postList[i].name << " ";
+  cout << endl;
+
+  cout << "current: ";
+  for (int i = 0; i < current.size(); i++)
+    cout << current[i].name << " ";
+  cout << endl;
+
+  // Detected deleted files: in postList but not in current
+  for (int i = 0; i < postList.size(); i++) {
+    if (!fileListContains(postList[i].name, current)) {
+      cout << "DELETED: " << postList[i].name << endl;
+      deletedFiles.push_back(postList[i]);
+    }
+  }
+
+  // Detected new files: in current but not in postList
+  // also ignore previously deleted files
+  needsSyncUpload = false;
+  for (int i = 0; i < current.size(); i++) {
+    if (!fileListContains(current[i].name, postList) && !fileListContains(current[i].name, deletedFiles)) {
+      cout << "NEW: " << current[i].name << endl;
+      needsSyncUpload = true;
+    }
+  }
+}
 
 
 bool Client::isDir(string dirPath) {
