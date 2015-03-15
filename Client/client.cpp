@@ -64,6 +64,8 @@ void Client::initClient() {
   ip_instance->IPJsonToLatLng( client_ip );
   client_lat = ip_instance->getlat();
   client_lng = ip_instance->getlng();
+
+  needsSyncUpload = false;
 }
 
 Client::~Client() {
@@ -150,6 +152,9 @@ void Client::autoSync(bool isFirstRun) {
   // Record files in directory after sync for comparison
   postSyncFileList.clear();
   postSyncFileList = getListOfFilesFromDirectory("");
+
+  if (needsSyncUpload)
+    syncUpload();
 
   return;
 }
@@ -423,6 +428,11 @@ void Client::downloadFile(FileInfo f) {
   printf("Downloading file... ");
   printFileInfo(f);
 
+  if (fileListContains(f.name, deletedFiles)) {
+    cout << f.name << " has already been deleted, skip..." << endl;
+    return;
+  }
+
   // request file f communication
   string cdn_address = "http://" + f.cdnAddr + "/";
   http_client cdn_client = http_client(cdn_address + "cdn/cache/");
@@ -466,6 +476,11 @@ void Client::downloadFile(FileInfo f) {
 void Client::uploadFile(FileInfo f) {
   printf("Uploading file... ");
   printFileInfo(f);
+
+  if (fileListContains(f.name, deletedFiles)) {
+    cout << f.name << " has already been deleted, skip..." << endl;
+    return;
+  }
   
   // Read file body
   ifstream readF(baseDir + "/" + f.name);
