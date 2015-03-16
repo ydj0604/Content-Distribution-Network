@@ -10,7 +10,13 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
   cout << "INITIALIZING CLIENT" << endl;
-  Client c = Client("http://localhost:3000/"); // initialize origin ip
+
+  string originIp = "http://localhost:3000/";
+  if (argc > 3)
+    originIp = argv[3];
+
+  cout << "origin ip: " << originIp << endl;
+  Client c = Client(originIp); // initialize origin ip
 
   cout << endl;
 
@@ -18,6 +24,7 @@ int main(int argc, char *argv[]) {
   if (argc > 2)
     c.baseDir = argv[2];
   printf("Base Dir: %s\n", c.baseDir.c_str());
+
 
   if (argc > 1) {
     if (strcmp(argv[1], "--download") == 0) {
@@ -50,7 +57,7 @@ int main(int argc, char *argv[]) {
       }
     }
   } else {
-    printf("Specify --download, --upload or --sync\n");
+    printf("Usage: ./client [--download,--upload,--sync] [dir] [meta address]\n");
   }
 
   return 0;
