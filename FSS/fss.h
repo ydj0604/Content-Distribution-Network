@@ -10,7 +10,7 @@ using namespace utility;
 using namespace http;
 using namespace web::http::experimental::listener;
 
-#define FSS_ADDR "http://localhost:5000/"
+// #define FSS_ADDR "http://localhost:5000/"
 #define FSS_DIR "./FSS_Storage"
 
 class FSS {
@@ -18,6 +18,7 @@ public:
   FSS(string metaIpAddrPort="localhost:3000/");
   ~FSS();
   void listen();
+  string fss_addr;
 private:
   // Request function
   void register_with_meta();

@@ -15,6 +15,10 @@ int main(int argc, char *argv[]) {
 
   cout << "meta ip: " << metaAddr << endl;
 	FSS* fss = new FSS(metaAddr);
+
+  if (argc > 2)
+    fss.fss_addr = argv[2];
+
 	fss->listen();
 	return 0;
 }

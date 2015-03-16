@@ -17,6 +17,7 @@ using namespace web::http::client;
 FSS::FSS(string metaIpAddrPort) {
   // get the ip_address of the client and lat/lng
   // Get client ip instance
+  fss_addr = "http://localhost:5000/"
 
   ip_instance = new ipToLatLng();
   fss_ipport = ip_instance->getipaddr();
@@ -31,13 +32,13 @@ FSS::FSS(string metaIpAddrPort) {
   cout<<"FSS LNG: " + to_string(fss_lng)<<endl;
 
   // Start communication for FSS
-  uri_builder getUri(FSS_ADDR);
+  uri_builder getUri(fss_addr);
   getUri.append_path("get");
   get_listener = http_listener(getUri.to_uri().to_string());
   get_listener.support(methods::GET, std::bind(&FSS::handle_get, this, std::placeholders::_1));
 
 
-  uri_builder postUri(FSS_ADDR);
+  uri_builder postUri(fss_addr);
   postUri.append_path("post");
   post_listener = http_listener(postUri.to_uri().to_string());
   post_listener.support(methods::POST, std::bind(&FSS::handle_post, this, std::placeholders::_1));
@@ -54,7 +55,7 @@ FSS::~FSS() {
 }
 
 void FSS::listen() {
-  cout << "[ FSS ] Listening at address " << FSS_ADDR << endl;
+  cout << "[ FSS ] Listening at address " << fss_addr << endl;
   try {
     get_listener
       .open()
