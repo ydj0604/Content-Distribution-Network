@@ -11,12 +11,16 @@ using namespace std;
 int main(int argc, char *argv[]) {
   cout << "INITIALIZING CLIENT" << endl;
 
-  string originIp = "http://localhost:3000/";
+  string originIp = "localhost:3000", loc="la";
+
+  if(argc > 4)
+	  loc = argv[4];
+
   if (argc > 3)
     originIp = argv[3];
 
-  cout << "origin ip: " << originIp << endl;
-  Client c = Client(originIp); // initialize origin ip
+  cout << "origin ip: " << "http://"+originIp << endl;
+  Client c = Client("http://"+originIp, loc); // initialize origin ip
 
   cout << endl;
 
@@ -41,7 +45,7 @@ int main(int argc, char *argv[]) {
         printf("\n  Autosyncing.....");
         
         // sleep for 10 seconds until next syncing
-        for (int i = 5; i > 0; i--) {
+        for (int i = 10; i > 0; i--) {
           cout << i << " ";
           fflush(stdout);
           sleep(1);

@@ -45,25 +45,45 @@ void eraseFirstPathChar(string &str) {
 }
 
 Client::Client() {
-  initClient();
+  initClient("la");
 }
 
-Client::Client( string orig_ip ) : m_orig_ip(orig_ip) {
+Client::Client( string orig_ip, string loc ) : m_orig_ip(orig_ip) {
   // store ip address of Origin
-  initClient();
+  initClient(loc);
 }
 
-void Client::initClient() {
+void Client::initClient(string loc) {
   baseDir = "./";
   // get the ip_address of the client and lat/lng
   // Get client ip instance
   ip_instance = new ipToLatLng();
   client_ip = ip_instance->getipaddr();
 
-  // use GET http request to retrieve client's latitude/longitude
-  ip_instance->IPJsonToLatLng( client_ip );
-  client_lat = ip_instance->getlat();
-  client_lng = ip_instance->getlng();
+	if(loc=="la") {
+		client_lat = 34.05;
+		client_lng = -118.44;
+	} else if(loc=="sf") {
+		client_lat = 37.77;
+		client_lng = -122.42;
+	} else if(loc=="st") {
+		client_lat = 47.61;
+		client_lng = -122.33;
+	} else if(loc=="bh") {
+		client_lat=25.03;
+		client_lng = -77.40;
+	} else if(loc=="nk") {
+		client_lat=40.34;
+		client_lng = 127.51;
+	} else if(loc=="au") {
+		client_lat=30.27;
+		client_lng = -97.74;
+	} else {
+		  // use GET http request to retrieve client's latitude/longitude
+		  ip_instance->IPJsonToLatLng( client_ip );
+		  client_lat = ip_instance->getlat();
+		  client_lng = ip_instance->getlng();
+	}
 
   needsSyncUpload = false;
 }

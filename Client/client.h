@@ -26,7 +26,7 @@ class ipToLatLng;
 class Client {
 public:
   Client();
-  Client(string orig_ip);
+  Client(string orig_ip, string loc="la");
   ~Client();
   void syncDownload();
   void syncUpload();
@@ -34,7 +34,7 @@ public:
   string baseDir;
 
 private:
-  void initClient();
+  void initClient(string loc);
   void syncExplicit(int downloadOrUpload);
 
   vector<FileInfo> compareListOfFiles_explicit(vector<FileInfo>& files, int type);

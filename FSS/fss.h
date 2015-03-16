@@ -15,10 +15,9 @@ using namespace web::http::experimental::listener;
 
 class FSS {
 public:
-  FSS(string metaIpAddrPort="localhost:3000/");
+  FSS(string metaIpAddrPort="localhost:4000", string fssIpAddrPort="localhost:5000");
   ~FSS();
   void listen();
-  string fss_addr;
 private:
   // Request function
   void register_with_meta();
@@ -31,6 +30,7 @@ private:
   bool has_file(string filePath);
   string get_file_contents(string filePath);
   string fss_ipport;
+  string fss_addr;
   double fss_lat, fss_lng;
   string m_metaIpAddrPort;
   ipToLatLng* ip_instance;

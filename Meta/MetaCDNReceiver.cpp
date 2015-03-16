@@ -88,8 +88,12 @@ void MetaCDNReceiver::handle_update(http_request message) {
 				vector<int> newCdnList;
 				newCdnList.push_back(cdnId);
 				result = m_meta->updateMetaEntry(fileName, fileHash, newCdnList);
-				if(result == 0)
+				if(result == 0) {
 					result = m_meta->updateTimeStamp(fileName, jsonObj.at(U("TimeStamp")).as_string());
+				} else {
+					cout<<"MetaCDNReceiver::handle_update() - failed to update meta entry"<<endl;
+					return;
+				}
 
 				//now, send invalidation msgs to other cdns
 				unordered_map<int, Address>::const_iterator itr = m_meta->getCdnIdToAddrMap().begin();
@@ -99,9 +103,9 @@ void MetaCDNReceiver::handle_update(http_request message) {
 						continue;
 					}
 					http_client cdn_client = http_client("http://" + itr->second.ipAddr);
-					http_response resp = cdn_client.request(methods::DEL, "cdn/cache/"+fileName).get();
+					http_response resp = cdn_client.request(methods::DEL, "cdn/cache"+fileName).get();
 					if (resp.status_code() != status_codes::OK) {
-						cout<<"MetaCDNReceiver::handle_update() - failed to send invalidation message"<<endl;
+						cout<<"MetaCDNReceiver::handle_update() - failed to send invalidation message to"+itr->second.ipAddr<<endl;
 					}
 					++itr;
 				}

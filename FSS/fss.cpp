@@ -14,10 +14,10 @@ using namespace json;
 using namespace web::http::experimental::listener;
 using namespace web::http::client;
 
-FSS::FSS(string metaIpAddrPort) {
+FSS::FSS(string metaIpAddrPort, string fssIpAddrPort) {
   // get the ip_address of the client and lat/lng
   // Get client ip instance
-  fss_addr = "http://localhost:5000/"
+  fss_addr = fssIpAddrPort;
 
   ip_instance = new ipToLatLng();
   fss_ipport = ip_instance->getipaddr();
@@ -32,13 +32,12 @@ FSS::FSS(string metaIpAddrPort) {
   cout<<"FSS LNG: " + to_string(fss_lng)<<endl;
 
   // Start communication for FSS
-  uri_builder getUri(fss_addr);
+  uri_builder getUri("http://"+fss_addr);
   getUri.append_path("get");
   get_listener = http_listener(getUri.to_uri().to_string());
   get_listener.support(methods::GET, std::bind(&FSS::handle_get, this, std::placeholders::_1));
 
-
-  uri_builder postUri(fss_addr);
+  uri_builder postUri("http://"+fss_addr);
   postUri.append_path("post");
   post_listener = http_listener(postUri.to_uri().to_string());
   post_listener.support(methods::POST, std::bind(&FSS::handle_post, this, std::placeholders::_1));
