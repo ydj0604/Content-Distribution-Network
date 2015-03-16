@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 	}
 	if(argc > 4) {
 		string temp3(argv[4]);
-		loc = temp;
+		loc = temp3;
 	}
 
 	CDN_Node* cdn = new CDN_Node(cdnIpAddr, metaIpAddr, fssIpAddr, loc);
