@@ -1,0 +1,57 @@
+To run our project on deter lab:
+
+1. Install the dependencies (on every node):
+- Casablanca
+- Boost
+- Crypto++ (if encryption desired)
+
+On deterlab, we were able to do this by manually installing Casablanca as the website describes, by first installing (in Ubuntu) the packages:
+
+libboost-random1.54-dev
+libboost-chrono1.54-dev
+libboost-system1.54-dev
+libboost-thread1.54-dev
+libboost-locale1.54-dev
+libboost-regex1.54-dev
+libboost-filesystem1.54-dev
+g++-4.8
+g++
+git
+make
+libssl-dev
+cmake
+git
+
+Then you can download casablanca by running:
+git clone http://git01.codeplex.com/casablanca
+
+And then build it by running:
+cd casablanca/Release
+mkdir build.release
+cd build.release
+CXX=g++-4.8 cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+
+Note: we chose to have the Casablanca built in the home directory, and so our makefiles will be based on that.
+
+2. Download and build our code (on every node):
+Download it from Github (branch Integration)
+
+git clone -b Integration https://github.com/ydj0604/Content-Distribution-Network 
+
+Then build
+cd Content-Distribution-Network/
+make
+
+The Makefile will build all executables to build/ if the dependencies are set up correctly.
+
+Note: even after building the project you MUST export the binaries for Casablanca as part of your LD_LIBRARY_FLAGS or the project will not be dynamically linked when you run the executables. This must be done on every node.
+
+
+3. Run each of the executables on the desired nodes (in this order):
+These addresses must specify ports, and must be distinct
+
+./meta [meta address] [origin address]
+./fss [fss address] [meta address] 
+./cdn [cdn address] [meta address] [fss address]
+./client [--download,--upload,--sync] [directory] [meta address]
