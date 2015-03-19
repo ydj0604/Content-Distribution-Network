@@ -66,7 +66,7 @@ void CDNReceiver::handle_delete(http_request message) {
 		sender->sendCacheDeleteMsgToMeta(fileName, m_cdn->get_cdn_id());
 		message.reply(status_codes::OK, U("delete succeeded"));
 	} else {
-		message.reply(status_codes::NotFound, U(fileName + " is not found in cdn"));
+		message.reply(status_codes::OK, U(fileName + " is not found in cdn"));
 	}
 }
 
@@ -83,6 +83,7 @@ void CDNReceiver::handle_get(http_request message) {
 	cout << message.to_string() << endl <<endl;
 
 	if(!m_cdn->look_up_and_remove_storage(fileName, 0)) { //cdn doesn't have the file in its cache
+		cout<<"CDN Cache MISS"<<endl;
 		if(sender->getFileFromFSS(fileName, m_cdn->get_cdn_id()) != 0) {
 			cout<<"CDNReceiver::handle_get - getFileFromFSS failed for "+fileName<<endl;
 			message.reply(status_codes::NotFound, fileName+" does not exist in fss");

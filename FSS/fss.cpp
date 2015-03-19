@@ -22,10 +22,16 @@ FSS::FSS(string metaIpAddrPort, string fssIpAddrPort) {
   ip_instance = new ipToLatLng();
   fss_ipport = ip_instance->getipaddr();
 
+  /*
   // use GET http request to retrieve client's latitude/longitude
   ip_instance->IPJsonToLatLng( fss_ipport );
   fss_lat = ip_instance->getlat();
   fss_lng = ip_instance->getlng();
+  */
+
+  //hard code fss location for testing purposes
+  fss_lat = 34.05;
+  fss_lng = -118.44;
 
   cout<<"FSS IP ADDR: " + fss_ipport<<endl;
   cout<<"FSS LAT: " + to_string(fss_lat)<<endl;

@@ -470,8 +470,8 @@ int MetaServer::deleteCdnFromMetaEntry(string fileName, int cdnId) {
 	fileOut.close();
 	if(fileFound==false)
 		cout<<"MetaServer::deleteCdnFromMetaEntry - "+fileName+" is not found for delete CDN operation"<<endl;
-	else if(cdnFound==false)
-		cout<<"MetaServer::deleteCdnFromMetaEntry - "+m_cdnIdToAddrMap[cdnId].ipAddr+" does not contain "+fileName<<endl;
+	//else if(cdnFound==false)
+	//	cout<<"MetaServer::deleteCdnFromMetaEntry - CDN#"+cdnId+" does not contain "+fileName<<endl;
 	if(cdnFound==false || fileFound==false)
 		return -1;
 	return 0;

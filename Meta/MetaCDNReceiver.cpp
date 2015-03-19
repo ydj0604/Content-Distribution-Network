@@ -105,7 +105,7 @@ void MetaCDNReceiver::handle_update(http_request message) {
 					http_client cdn_client = http_client("http://" + itr->second.ipAddr);
 					http_response resp = cdn_client.request(methods::DEL, "cdn/cache"+fileName).get();
 					if (resp.status_code() != status_codes::OK) {
-						cout<<"MetaCDNReceiver::handle_update() - failed to send invalidation message to"+itr->second.ipAddr<<endl;
+						cout<<"MetaCDNReceiver::handle_update() - failed to send invalidation message to "+itr->second.ipAddr<<endl;
 					}
 					++itr;
 				}
@@ -156,7 +156,7 @@ void MetaCDNReceiver::handle_delete(http_request message) {
 			int cdnId = jsonObj.at(U("CdnId")).as_integer();
 			string fileName = utility::conversions::to_utf8string(jsonObj.at(U("FileName")).as_string());
 			result = m_meta->deleteCdnFromMetaEntry(fileName, cdnId);
-			message.reply(result==0? status_codes::OK : status_codes::NotFound, result==0? U("Deleted successfully") : U("Delete failed"));
+			message.reply(status_codes::OK, result==0? U("Deleted successfully") : U("Delete failed"));
 		} else {
 			message.reply(status_codes::Forbidden, U("Json object is required"));
 		}
