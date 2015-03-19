@@ -18,9 +18,10 @@ FSS::FSS(string metaIpAddrPort, string fssIpAddrPort) {
   // get the ip_address of the client and lat/lng
   // Get client ip instance
   fss_addr = fssIpAddrPort;
+  fss_ipport =fssIpAddrPort;
 
-  ip_instance = new ipToLatLng();
-  fss_ipport = ip_instance->getipaddr();
+  //ip_instance = new ipToLatLng();
+  //fss_ipport = ip_instance->getipaddr();
 
   /*
   // use GET http request to retrieve client's latitude/longitude
