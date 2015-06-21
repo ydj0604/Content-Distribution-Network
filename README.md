@@ -6,14 +6,14 @@ Main Components: Client Application, Origin Server, Meta Server, CDN Nodes (loca
 
 **Origin Server**
 
-Origin Server basically works like a bridge that all initial communications go through (except for the actual file transfer), so it will need to handle vast amount of traffic among all the components. Therefore, it is designed to have minimal computation within itself. Instead, it focuses on correctly, efficiently redirecting client requests to appropriate Meta Server if there are multiple Meta Servers. Moreover, Origin Server itself does not maintain any information but heavily relies on Meta Server for both storing and computing information required for the entire system to work. As Origin Server works as the initial point of contact for all Client Applications, Client Applications only need to be aware of the ways to interact with Origin Server, and stay detached from complex details of the entire system. Also, when there is only a single Meta Server, Origin Server can be installed in the same machine as Meta Server in order to eliminate the network delay for the communication between Meta Server and Origin Server.
+Origin Server basically works like a bridge that all Client Apps' initial communications go through (except for the actual file transfer), so it will need to handle the large number of requests. Therefore, it is designed to have minimal computation within itself. It focuses on correctly, efficiently redirecting client requests to appropriate Meta Server if there are multiple Meta Servers. Moreover, Origin Server itself does not maintain any information but heavily relies on Meta Server for both storing and computing information required for the entire system to work. As Origin Server works as the initial point of contact for all Client Applications, Client Applications only need to be aware of the ways to interact with Origin Server, and stay detached from details of the entire system. Also, when there is only a single Meta Server, Origin Server can be deployed in the same machine as Meta Server in order to eliminate the network delay for the communication between Meta Server and Origin Server.
 
 **Meta Server**
 
 Meta Server works close to Origin Server and functions as a brain of the entire system. Meta Server keeps track of a list of files that are uploaded or deleted, all the necessary meta data for every file, information about all the CDN Nodes in the system. 
 In summary, Meta Server serves two main tasks: 
 1) Maintain meta data (file hash, a list of CDN Nodes (cache nodes) that contain the file, timestamp, etc) about all the files stored in the system, 
-2) Compile a list of files that Client Application asks for and uses to make an appropriate request directly to CDN Nodes in the process of Explicit Sync Upload, Explicit Sync Download, and Auto Sync
+2) Compile and send a list of files that Client Applications can use to make an appropriate request directly to CDN Nodes in order to transfer files
 
 Selection Algorithm for choosing the CDN Node that will optimize the flow
 1. CDN Nodes that have file(s) in cache already
@@ -23,9 +23,9 @@ Selection Algorithm for choosing the CDN Node that will optimize the flow
 
 **CDN Node**
 
-CDN Nodes are local cache nodes to transfer files from FSS to Client and vice versa. They will attempt to offload work from MetaServer by delivering content on their behalf. CDN Nodes will transfer (1) updated/created files to FSS (2) requested files to Client from Cache or FSS (3) invalid their caches to update or remove the certain file from caches and (4) update filelist in its cache to MetaServer. Each CDN Nodes do not communicate and only get orders from MetaServer. They will connect to Client directly when they have to transfer the file. Our CDN caching is implemented based upon LRU cache architecture that always update files order by recently used. (We use the terms CDN and CDN Node interchangeably in this report)
+CDN Nodes are local cache nodes to transfer files from FSS to Client and vice versa. They will attempt to offload work from MetaServer by delivering content on their behalf. CDN Nodes will (1)transfer updated/created files to  FSS, (2) serve Client App's requests for files, (3) invalidate their cached files, (4) inform Meta Server with the up-to-date list of files they have. They will communicate with Client directly when they have to transfer the file. CDN caching is based upon LRU cache policy (Note that the terms CDN and CDN Node are used interchangeably)
 
-Prefetching: in order to increase the possibility of cache-hits, CDN uses pre-fetching strategy. Whenever a request for a file comes into CDN, CDN fetches all the files that exist in the same directory from FSS. This is based on the assumption that every request for a file originates from Client Application, which never asks for just one specific file and terminates syncing.
+Prefetching: in order to increase the possibility of cache-hits, CDN uses pre-fetching strategy. Whenever a request for a file comes into CDN, CDN fetches all the files that exist in the same directory from FSS. This is based on the assumption that every request for a file originates from Client Application, which never asks for just one specific file.
 
 Cache Policy: LRU
 
