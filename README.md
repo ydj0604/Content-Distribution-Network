@@ -7,9 +7,9 @@ High-level Architecture: descriptions in CDNDesign.txt
 Main Components: Origin server, Meta server, CDN Node(s), File Storage Server, Client Application
 
 
-Technologies to be used:
-
-1. casablanca (C++): https://casablanca.codeplex.com/
+Technologies used:
+1. C++
+2. casablanca (C++ REST framework): https://casablanca.codeplex.com/
 
 Google Doc: https://docs.google.com/document/d/1vdE9084hsvU3WLp8chF8b2vXLoSgocfiD8iQCq24T-w/edit
 
